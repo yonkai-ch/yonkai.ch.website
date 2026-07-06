@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&amp;family=Hanken+Grotesque:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&amp;text=%E7%9F%B3%E3%81%AE%E4%B8%8A%E3%81%AB%E3%82%82%E5%B9%B4%E3%80%82&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@900&amp;text=%EC%84%9C%EB%8B%B9%EA%B0%9C%EB%85%84%EC%9D%B4%EB%A9%B4%ED%92%8D%EC%9B%94%EC%9D%84%EC%9D%8A%EB%8A%94%EB%8B%A4%2E%20&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ===== Brand pastels ===== */
+    --mint:#8FDDC4;        --mint-rgb:143,221,196;
+    --sky:#A9D6F2;         --sky-rgb:169,214,242;
+    --butter:#F6EFA3;      --butter-rgb:246,239,163;
+    --pink:#F5A9C9;        --pink-rgb:245,169,201;
+    --butter-deep:#D8C95A; /* darker butter for text on light */
+    /* ===== Ink (dark text on a pastel fill) ===== */
+    --mint-ink:#16241d;
+    /* ===== Surfaces ===== */
+    --bg:#2A2A28;          --bg-rgb:42,42,40;
+    --bg-alt:#262624;
+    --card:#2e2e2c;
+    --card-dashed:#2b2b29;
+    --surface-2:#34342f;
+    /* ===== Text (3-tier scale) ===== */
+    --text:#ECEAE3;
+    --text-body:#C4C2B9;
+    --text-muted:#9C9A90;
+    /* ===== Borders ===== */
+    --border:#3a3a36;
+    --border-strong:#54544c;
+    --border-btn:#5a5a52;
+    --border-dashed:#4a4a44;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Hanken Grotesque', sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--mint); color: var(--mint-ink); }
+  *::-webkit-scrollbar { height: 0; width: 0; }
+  @keyframes auroraDrift { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(40px,-30px) scale(1.12); } 66% { transform: translate(-30px,20px) scale(0.95); } }
+  @keyframes scrollBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  input, textarea { font-family: inherit; }
+</style>
+<script>
+(function(){
+  /* ---- hero orb cursor parallax ---- */
+  var cx=0,cy=0,tx=0,ty=0,raf=null,hero=null,orbs=null;
+  function ensure(){ hero=document.getElementById('y-hero'); orbs=hero?hero.querySelectorAll('.y-orb'):null; return !!(hero&&orbs&&orbs.length); }
+  function apply(){
+    cx+=(tx-cx)*0.12; cy+=(ty-cy)*0.12;
+    for(var i=0;i<orbs.length;i++){ var o=orbs[i]; var d=parseFloat(o.getAttribute('data-depth'))||0.05; o.style.transform='translate('+(cx*d).toFixed(2)+'px,'+(cy*d).toFixed(2)+'px)'; }
+    if(Math.abs(tx-cx)>0.3||Math.abs(ty-cy)>0.3){ raf=requestAnimationFrame(apply); } else { raf=null; }
+  }
+  window.addEventListener('mousemove',function(e){
+    if(!ensure()) return;
+    var r=hero.getBoundingClientRect();
+    tx=e.clientX-(r.left+r.width/2); ty=e.clientY-(r.top+r.height/2);
+    if(!raf) raf=requestAnimationFrame(apply);
+  },{passive:true});
+
+  /* ---- references carousel (event delegation + rAF smooth) ---- */
+  function animScroll(el, delta){
+    var start=el.scrollLeft, target=start+delta, dur=420, t0=Date.now();
+    var iv=setInterval(function(){
+      var p=Math.min((Date.now()-t0)/dur,1);
+      var e=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      el.scrollLeft=start+(target-start)*e;
+      if(p>=1) clearInterval(iv);
+    },16);
+  }
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest('[data-carousel-prev],[data-carousel-next]'); if(!btn) return;
+    var c=btn.closest('[data-carousel]'); if(!c) return;
+    var track=c.querySelector('[data-carousel-track]'); if(!track) return;
+    var card=track.querySelector('[data-card]');
+    var gap=parseFloat(getComputedStyle(track).columnGap||getComputedStyle(track).gap||'20')||20;
+    var dist=card?card.getBoundingClientRect().width+gap:340;
+    animScroll(track, btn.hasAttribute('data-carousel-next')?dist:-dist);
+  });
+
+  /* ---- contact form -> mailto ---- */
+  document.addEventListener('submit',function(e){
+    var f=e.target.closest('[data-contact-form]'); if(!f) return; e.preventDefault();
+    var fd=new FormData(f);
+    var name=(fd.get('name')||'').toString(), email=(fd.get('email')||'').toString(), msg=(fd.get('message')||'').toString();
+    var body=encodeURIComponent('From: '+name+' ('+email+')\n\n'+msg);
+    window.location.href='mailto:hello@yonkai.com?subject='+encodeURIComponent('Project inquiry from '+name)+'&body='+body;
+  });
+
+  /* ---- nav: per-item pastel (hover + active section via scroll-spy) ---- */
+  var cssroot=getComputedStyle(document.documentElement);
+  function cssvar(n){ return cssroot.getPropertyValue(n).trim(); }
+  var hovnav=null, curnav=null;
+  function paintLink(l){
+    var on=(l===hovnav)||(l.getAttribute('data-nav')===curnav);
+    l.style.color=on?cssvar(l.getAttribute('data-color')):cssvar(l.getAttribute('data-base'));
+    if(l.hasAttribute('data-btn')) l.style.borderColor=on?cssvar(l.getAttribute('data-color')):cssvar('--border-strong');
+  }
+  function paintNav(){ var ls=document.querySelectorAll('[data-nav]'); for(var i=0;i<ls.length;i++) paintLink(ls[i]); }
+  document.addEventListener('pointerover',function(e){ var l=e.target.closest&&e.target.closest('[data-nav]'); if(l){ hovnav=l; paintNav(); } });
+  document.addEventListener('pointerout',function(e){ var l=e.target.closest&&e.target.closest('[data-nav]'); if(l&&l===hovnav){ hovnav=null; paintNav(); } });
+  function initSpy(){
+    paintNav();
+    var ids=['services','references','philosophy','contact'];
+    var ticking=false;
+    function update(){
+      ticking=false;
+      var line=window.innerHeight/2; /* middle of the screen */
+      var cur=null;
+      for(var i=0;i<ids.length;i++){ var s=document.getElementById(ids[i]); if(s && s.getBoundingClientRect().top<=line) cur=ids[i]; }
+      if(cur!==curnav){ curnav=cur; paintNav(); }
+    }
+    function onscr(){ if(!ticking){ ticking=true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', onscr, {passive:true});
+    window.addEventListener('resize', onscr, {passive:true});
+    update();
+  }
+
+  /* ---- scroll reveal (progressive enhancement) ---- */
+  function initReveal(){
+    var els=[].slice.call(document.querySelectorAll('[data-reveal]'));
+    if(!els.length) return;
+    if(!('IntersectionObserver' in window)){ return; }
+    els.forEach(function(el,i){
+      el._ot=el.style.transition||''; /* remember original (e.g. card hover) transition */
+      el.style.opacity='0';
+      el.style.transform='translateY(20px)';
+      el.style.transition='opacity .7s cubic-bezier(.2,.7,.2,1) '+(i%4*0.06)+'s, transform .7s cubic-bezier(.2,.7,.2,1) '+(i%4*0.06)+'s';
+    });
+    function settle(el){ el.style.transform=''; el.style.transition=el._ot||''; }
+    var io=new IntersectionObserver(function(ents){
+      ents.forEach(function(en){ if(en.isIntersecting){ var t=en.target; t.style.opacity='1'; t.style.transform='none'; io.unobserve(t); setTimeout(function(){ settle(t); }, 1000); } });
+    },{threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(el){ io.observe(el); });
+    setTimeout(function(){ els.forEach(function(el){ el.style.opacity='1'; settle(el); }); }, 2500);
+  }
+  /* ---- hero headline language rotator (vertical roll + blur) ---- */
+  function initRotator(){
+    var el=document.getElementById('rot-head');
+    var plist=document.getElementById('rot-phrases');
+    if(!el||!plist) return;
+    var phrases=[].map.call(plist.querySelectorAll('li'),function(li){ return li.textContent.trim(); }).filter(Boolean);
+    if(phrases.length<2){ if(phrases[0]) el.textContent=phrases[0]; return; }
+    el.textContent=phrases[0];
+    var idx=0;
+    var easeout='opacity .42s ease, transform .42s cubic-bezier(.55,0,.9,.35), filter .42s ease';
+    var easein='opacity .55s ease, transform .6s cubic-bezier(.16,1,.3,1), filter .55s ease';
+    setInterval(function(){
+      el.style.transition=easeout;
+      el.style.opacity='0';
+      el.style.transform='translateY(-42px)';
+      el.style.filter='blur(7px)';
+      setTimeout(function(){
+        idx=(idx+1)%phrases.length;
+        el.textContent=phrases[idx];
+        el.style.transition='none';
+        el.style.transform='translateY(46px)';
+        el.style.filter='blur(7px)';
+        void el.offsetWidth;
+        el.style.transition=easein;
+        el.style.opacity='1';
+        el.style.transform='translateY(0)';
+        el.style.filter='blur(0)';
+      },440);
+    },3600);
+  }
+
+  /* ---- keyword random color glow ---- */
+  function initkw(){
+    var kws=[].slice.call(document.querySelectorAll('[data-kw]'));
+    if(!kws.length) return;
+    var last=-1;
+    function glow(){
+      var i;
+      do { i=Math.floor(Math.random()*kws.length); } while(kws.length>1 && i===last);
+      last=i;
+      var pick=kws[i];
+      pick.style.color=cssvar(pick.getAttribute('data-kw'));
+      setTimeout(function(){ pick.style.color=''; }, 900+Math.random()*800);
+      setTimeout(glow, 650+Math.random()*2200);
+    }
+    setTimeout(glow, 1000);
+  }
+
+  var booted=false;
+  function boot(){ if(booted) return; booted=true; initReveal(); initSpy(); initRotator(); initkw(); }
+  if(document.readyState!=='loading'){ setTimeout(boot,300); }
+  window.addEventListener('load', boot);
+})();
+</script>
+</helmet>
+
+<!-- ============================ NAV ============================ -->
+<nav style="position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:18px 40px; background:rgba(var(--bg-rgb),0.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--border);">
+  <a href="#top" style="display:flex; align-items:center; gap:11px; text-decoration:none;">
+    <div style="width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,var(--mint),var(--sky));"></div>
+    <span style="font-weight:700; font-size:19px; letter-spacing:-0.01em; color:var(--text);">Yonkai</span>
+  </a>
+  <div style="display:flex; gap:8px; align-items:center; font-size:14px; font-weight:600;">
+    <a href="#services" data-nav="services" data-color="--mint" data-base="--text-body" style="text-decoration:none; color:var(--text-body); padding:8px 14px; border-radius:8px; transition:color .25s ease;">Services</a>
+    <a href="#references" data-nav="references" data-color="--sky" data-base="--text-body" style="text-decoration:none; color:var(--text-body); padding:8px 14px; border-radius:8px; transition:color .25s ease;">References</a>
+    <a href="#philosophy" data-nav="philosophy" data-color="--butter" data-base="--text-body" style="text-decoration:none; color:var(--text-body); padding:8px 14px; border-radius:8px; transition:color .25s ease;">Philosophy</a>
+    <a href="#contact" data-nav="contact" data-color="--pink" data-base="--text-body" style="text-decoration:none; color:var(--text-body); padding:8px 14px; border-radius:8px; transition:color .25s ease;">Contact</a>
+  </div>
+</nav>
+
+<!-- ============================ HERO ============================ -->
+<header id="top" data-screen-label="Hero">
+  <div id="y-hero" style="position:relative; overflow:hidden; min-height:100vh; display:flex; align-items:center; padding-top:96px; box-sizing:border-box;">
+    <div style="position:absolute; top:50%; right:-60px; transform:translateY(-50%) scale(1.18); transform-origin:center right; width:680px; height:680px; pointer-events:none;">
+      <div class="y-orb" data-depth="0.06" style="position:absolute; top:60px; left:240px; width:340px; height:340px; will-change:transform;"><div style="width:100%; height:100%; border-radius:50%; background:var(--mint); mix-blend-mode:screen; filter:blur(6px); opacity:0.9; animation:auroraDrift 17s ease-in-out infinite;"></div></div>
+      <div class="y-orb" data-depth="0.11" style="position:absolute; top:150px; left:60px; width:360px; height:360px; will-change:transform;"><div style="width:100%; height:100%; border-radius:50%; background:var(--sky); mix-blend-mode:screen; filter:blur(6px); opacity:0.85; animation:auroraDrift 21s ease-in-out infinite 1.5s;"></div></div>
+      <div class="y-orb" data-depth="0.045" style="position:absolute; top:300px; left:250px; width:320px; height:320px; will-change:transform;"><div style="width:100%; height:100%; border-radius:50%; background:var(--butter); mix-blend-mode:screen; filter:blur(6px); opacity:0.7; animation:auroraDrift 19s ease-in-out infinite 3s;"></div></div>
+      <div class="y-orb" data-depth="0.14" style="position:absolute; top:250px; left:120px; width:300px; height:300px; will-change:transform;"><div style="width:100%; height:100%; border-radius:50%; background:var(--pink); mix-blend-mode:screen; filter:blur(6px); opacity:0.8; animation:auroraDrift 23s ease-in-out infinite 2s;"></div></div>
+    </div>
+    <div style="position:absolute; inset:0; background:linear-gradient(90deg,var(--bg) 36%,rgba(var(--bg-rgb),0.35) 62%,transparent 82%); pointer-events:none;"></div>
+    <div style="position:relative; z-index:3; width:100%; max-width:1180px; margin:0 auto; padding:0 40px;">
+      <div style="max-width:760px;">
+        <div style="height:190px; display:flex; align-items:flex-end; overflow:hidden;">
+          <h1 id="rot-head" style="margin:0; font-family:'Archivo','Noto Sans JP','Noto Sans KR',sans-serif; font-weight:900; font-size:88px; line-height:1.06; letter-spacing:-0.03em; color:var(--text); word-break:keep-all;">3rd time is the charm.</h1>
+        </div>
+        <!-- Headline rotation phrases — edit / add / reorder <li> items freely -->
+        <ul id="rot-phrases" hidden="" style="display:none;">
+          <li>3rd time is the charm.</li>
+          <li>石の上にも3年。</li>
+          <li>Aller guten Dinge sind 3.</li>
+          <li>서당 개 3년이면 풍월을 읊는다.</li>
+        </ul>
+        <h1 style="margin:14px 0 0; font-family:'Archivo',sans-serif; font-weight:900; font-size:88px; line-height:0.9; letter-spacing:-0.04em; color:var(--mint);">Why stop there?</h1>
+        <p style="margin:30px 0 0; font-size:20px; line-height:1.6; color:var(--text-body); max-width:480px;">It’s never too early to start thinking about <span data-kw="--pink" style="transition:color .8s ease;">scalability</span> and <span data-kw="--sky" style="transition:color .8s ease;">efficiency</span> of your <span data-kw="--butter" style="transition:color .8s ease;">processes</span> – the smaller you are, the more precious your time is.</p>
+        <div style="display:flex; gap:22px; align-items:center; margin-top:40px;">
+          <a href="#contact" style="text-decoration:none; color:var(--text); font-weight:600; padding:15px 30px; border-radius:8px; border:1px solid var(--border-btn); font-size:16px; transition:color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;" style-hover="border-color:var(--pink); color:var(--pink); box-shadow:0 0 0 1px var(--pink), 0 12px 30px rgba(var(--pink-rgb),0.14); transform:translateY(-2px);">Start a conversation</a>
+        </div>
+      </div>
+    </div>
+    <a href="#services" aria-label="Scroll to services" style="position:absolute; left:50%; bottom:32px; transform:translateX(-50%); z-index:3; display:flex; flex-direction:column; align-items:center; gap:10px; text-decoration:none; color:var(--text-muted); transition:color .25s ease;" style-hover="color:var(--text);">
+      <span style="font-size:12px; letter-spacing:0.2em; text-transform:uppercase;">See my services</span>
+      <span style="display:block; animation:scrollBob 1.8s ease-in-out infinite; font-size:20px; line-height:1;">↓</span>
+    </a>
+  </div>
+</header>
+
+<!-- ============================ SERVICES ============================ -->
+<section id="services" data-screen-label="Services" style="scroll-margin-top:80px; max-width:1180px; margin:0 auto; padding:120px 40px 90px;">
+  <div data-reveal="" style="text-align:center; max-width:900px; margin:0 auto 48px;">
+    <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">/* SERVICES */</div>
+    <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.02; letter-spacing:-0.03em; color:var(--text); white-space:nowrap;">How I can help</h2>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px;">
+
+    <div data-reveal="" data-card="" data-glow="--sky-rgb" style="background:linear-gradient(180deg,var(--sky) 0,var(--sky) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:26px 30px 24px; display:flex; flex-direction:column; transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease;" style-hover="border-color:var(--sky); box-shadow:0 12px 30px rgba(var(--sky-rgb),0.28); transform:translateY(-6px); position:relative; z-index:2;">
+      <h3 style="margin:0 0 16px; font-size:22px; font-weight:800; color:var(--sky);">Agile Coaching</h3>
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px;">Problem Statement</div>
+      <ul style="margin:0 0 16px; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px;">
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:50%; transform:translateY(-50%); color:var(--sky);">•</span>Standups happen, but nothing actually moves</li>
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position: absolute; left: 0px; top:50%; transform:translateY(-50%); color: var(--sky);">•</span>Instead of collaborating, stakeholders and the team pull in opposite directions</li>
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position: absolute; left: 0px; top:50%; transform:translateY(-50%); color: var(--sky);">•</span>Agile is only on paper, the reality is chaos</li>
+      </ul>
+      <div style="height:1px; background:var(--border); margin:2px 0 14px;"></div>
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--sky); margin:0 0 8px;">My Solution</div>
+      <p style="margin:0 0 4px; font-size:13px; line-height:1.55; color:var(--text-body);">Agile frameworks are primarily a mindset, not a rulebook, which is exactly why they work. Over the past decade, I have worked in various Scrum teams and salvaged chaotic agile projects by incorporating my practical experience. My main goal is to leave each project self-sufficient even after I step away.</p>
+      <div style="margin-top:auto; padding-top:20px; display:flex; flex-wrap:wrap; gap:8px;"><span style="font-size:11px; color:var(--sky); border:1px solid rgba(var(--sky-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">Scrum</span><span style="font-size:11px; color:var(--sky); border:1px solid rgba(var(--sky-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">PSPO I</span><span style="font-size:11px; color:var(--sky); border:1px solid rgba(var(--sky-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">SAFe</span><span style="font-size:11px; color:var(--sky); border:1px solid rgba(var(--sky-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">HERMES</span></div>
+    </div>
+
+    <div data-reveal="" data-card="" data-glow="--butter-rgb" style="background:linear-gradient(180deg,var(--butter) 0,var(--butter) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:26px 30px 24px; display:flex; flex-direction:column; transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease;" style-hover="border-color:var(--butter); box-shadow:0 12px 30px rgba(var(--butter-rgb),0.28); transform:translateY(-6px); position:relative; z-index:2;">
+      <h3 style="margin:0 0 16px; font-size:22px; font-weight:800; color:var(--butter);">Solution Design</h3>
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px;">Problem Statement</div>
+      <ul style="margin:0 0 16px; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px;">
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position: absolute; left: 0px; top:50%; transform:translateY(-50%); color: var(--butter);">•</span>Every sprint reopens previously completed tasks</li>
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position: absolute; left: 0px; top:50%; transform:translateY(-50%); color: var(--butter);">•</span>Engineers and stakeholders are not aligned</li>
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position: absolute; left: 0px; top:50%; transform:translateY(-50%); color: var(--butter);">•</span>The implementation starts before anyone agrees what “done” really means</li>
+      </ul>
+      <div style="height:1px; background:var(--border); margin:2px 0 14px;"></div>
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--butter); margin:0 0 8px;">My Solution</div>
+      <p style="margin:0 0 4px; font-size:13px; line-height:1.55; color:var(--text-body);">I do the thinking that saves the building. I get everyone seeing the same system, the same scope, and the same priorities before the work begins, so momentum holds when surprises arrive later. Forged in regulated industries (banking and public sector) and workflow automation, including a CHF 25M+ greenfield project.</p>
+      <div style="margin-top:auto; padding-top:20px; display:flex; flex-wrap:wrap; gap:8px;"><span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">BPMN</span><span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">KYC Onboarding</span><span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">FINMA</span><span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">SaaS</span></div>
+    </div>
+
+    <div data-reveal="" data-card="" data-glow="--pink-rgb" style="background:linear-gradient(180deg,var(--pink) 0,var(--pink) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:26px 30px 24px; display:flex; flex-direction:column; transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease;" style-hover="border-color:var(--pink); box-shadow:0 12px 30px rgba(var(--pink-rgb),0.28); transform:translateY(-6px); position:relative; z-index:2;">
+      <h3 style="margin:0 0 16px; font-size:22px; font-weight:800; color:var(--pink);">Business Architecture</h3>
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); margin:0 0 10px;">Problem Statement</div>
+      <ul style="margin:0 0 16px; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px;">
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position: absolute; left: 0px; top:50%; transform:translateY(-50%); color: var(--pink);">•</span>Scaling the organization multiplies problems faster than returns</li>
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position: absolute; left: 0px; top:50%; transform:translateY(-50%); color: var(--pink);">•</span>Everything still routes through a few key people</li>
+        <li style="font-size:13.5px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:50%; transform:translateY(-50%); color:var(--pink);">•</span>Strategic initiatives start strong, then quietly fade</li>
+      </ul>
+      <div style="height:1px; background:var(--border); margin:2px 0 14px;"></div>
+      <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--pink); margin:0 0 8px;">My Solution</div>
+      <p style="margin:0 0 4px; font-size:13px; line-height:1.55; color:var(--text-body);">Complexity and ambiguity are where I thrive. I map how a business really runs and rebuild it around roles and processes that scale, so growth pays off, expertise stops bottlenecking, and big initiatives actually land. As both Business Analyst and Enterprise Architect, I have done exactly this at the executive level.</p>
+      <div style="margin-top:auto; padding-top:20px; display:flex; flex-wrap:wrap; gap:8px;"><span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">Cyber Security</span><span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">Digitalization</span><span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">Scalability</span></div>
+    </div>
+
+  </div>
+
+  <!-- Fractional CIO — the umbrella offering, on its own row -->
+  <div data-reveal="" data-card="" data-glow="--mint-rgb" style="margin-top:20px; background:linear-gradient(90deg,var(--mint) 0,var(--mint) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:34px 40px; display:grid; grid-template-columns:1.5fr 1fr; gap:44px; align-items:center; transition:border-color .25s ease, box-shadow .25s ease, transform .25s ease;" style-hover="border-color:var(--mint); box-shadow:0 12px 30px rgba(var(--mint-rgb),0.28); transform:translateY(-6px); position:relative; z-index:2;">
+    <div>
+      <div style="display:inline-block; font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:var(--mint); border:1px solid rgba(var(--mint-rgb),0.4); border-radius:999px; padding:3px 12px; margin-bottom:16px;">Not sure where to start?</div>
+      <h3 style="margin:0 0 12px; font-size:26px; font-weight:800; color:var(--mint);">Fractional CIO</h3>
+      <p style="margin:0 0 18px; font-size:15px; line-height:1.65; color:var(--text-body); max-width:520px;">The umbrella that ties the three together. When you don’t have the time — or an in-house tech leader — I step in as your part-time CIO: setting the direction, then coaching, designing and transforming as needed. One point of contact for the whole picture.</p>
+      <div style="display:flex; flex-wrap:wrap; gap:16px; font-size:13px; color:var(--text-muted);">
+        <span style="display:inline-flex; align-items:center; gap:7px;"><span style="width:9px; height:9px; border-radius:50%; background:var(--sky);"></span>Agile Coaching</span>
+        <span style="display:inline-flex; align-items:center; gap:7px;"><span style="width:9px; height:9px; border-radius:50%; background:var(--butter);"></span>Solution Design</span>
+        <span style="display:inline-flex; align-items:center; gap:7px;"><span style="width:9px; height:9px; border-radius:50%; background:var(--pink);"></span>Business Architecture</span>
+      </div>
+    </div>
+    <div style="border-left:1px solid var(--border); padding-left:36px;">
+      <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:10px;">
+        <li style="font-size:14px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:50%; transform:translateY(-50%); color:var(--mint);">•</span>Enterprise architecture &amp; IT strategy</li>
+        <li style="font-size:14px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:50%; transform:translateY(-50%); color:var(--mint);">•</span>Cyber Security &amp; Compliance</li>
+        <li style="font-size:14px; color:var(--text-body); line-height:1.55; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:50%; transform:translateY(-50%); color:var(--mint);">•</span>Vendor Management</li>
+      </ul>
+      <div style="margin-top:20px; font-size:12px; color:var(--text-muted); letter-spacing:0.06em; text-transform:uppercase;">4+ years experience</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ REFERENCES (carousel) ============================ -->
+<section id="references" data-screen-label="References" style="scroll-margin-top:80px; background:var(--bg-alt); border-top:1px solid var(--surface-2); border-bottom:1px solid var(--surface-2); padding:100px 0;">
+  <div data-carousel="" style="max-width:1180px; margin:0 auto; padding:0 40px;">
+    <div data-reveal="" style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:40px;">
+      <div style="max-width:620px;">
+        <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">// REFERENCES</div>
+        <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.02; letter-spacing:-0.03em; color:var(--text);">What I&rsquo;ve done</h2>
+        <p style="margin:18px 0 0; font-size:17px; line-height:1.6; color:var(--text-muted);">Years of projects and clients across coaching, strategy and design. Drag or use the arrows to browse.</p>
+      </div>
+      <div style="display:flex; gap:10px; flex:none;">
+        <button data-carousel-prev="" aria-label="Previous" style="width:46px; height:46px; border-radius:50%; background:transparent; border:1px solid var(--border-strong); color:var(--text); font-size:18px; cursor:pointer; transition:all .2s ease;" style-hover="border-color:var(--text); background:var(--surface-2);">←</button>
+        <button data-carousel-next="" aria-label="Next" style="width:46px; height:46px; border-radius:50%; background:transparent; border:1px solid var(--border-strong); color:var(--text); font-size:18px; cursor:pointer; transition:all .2s ease;" style-hover="border-color:var(--text); background:var(--surface-2);">→</button>
+      </div>
+    </div>
+    <div data-carousel-track="" data-reveal="" style="display:flex; gap:20px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:8px; scrollbar-width:none;">
+      <div data-card="" style="scroll-snap-align:start; flex:0 0 320px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--mint);">
+        <span style="font-size:13px; color:var(--mint); font-weight:600;">2024 – 2025</span>
+        <h3 style="margin:10px 0 8px; font-size:20px; font-weight:700; color:var(--text);">Agile transformation lead</h3>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--text-muted);">Scaled delivery for a growing scale-up; aligned product, design and engineering around one cadence.</p>
+        <span style="margin-top:auto; padding-top:16px; font-size:12px; color:var(--text-muted); letter-spacing:0.04em;">SCALE-UP · SOFTWARE</span>
+      </div>
+      <div data-card="" style="scroll-snap-align:start; flex:0 0 320px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--sky);">
+        <span style="font-size:13px; color:var(--sky); font-weight:600;">2022 – 2024</span>
+        <h3 style="margin:10px 0 8px; font-size:20px; font-weight:700; color:var(--text);">Fractional CIO</h3>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--text-muted);">IT strategy, security and compliance for an SME — modern architecture without a full-time hire.</p>
+        <span style="margin-top:auto; padding-top:16px; font-size:12px; color:var(--text-muted); letter-spacing:0.04em;">SME · STRATEGY</span>
+      </div>
+      <div data-card="" style="scroll-snap-align:start; flex:0 0 320px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--butter);">
+        <span style="font-size:13px; color:var(--butter); font-weight:600;">2019 – 2022</span>
+        <h3 style="margin:10px 0 8px; font-size:20px; font-weight:700; color:var(--text);">Greenfield solution design</h3>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--text-muted);">From requirements to a delivery partner — led the collaboration through to a shipped product.</p>
+        <span style="margin-top:auto; padding-top:16px; font-size:12px; color:var(--text-muted); letter-spacing:0.04em;">GREENFIELD · DESIGN</span>
+      </div>
+      <div data-card="" style="scroll-snap-align:start; flex:0 0 320px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--pink);">
+        <span style="font-size:13px; color:var(--pink); font-weight:600;">2016 – 2019</span>
+        <h3 style="margin:10px 0 8px; font-size:20px; font-weight:700; color:var(--text);">Scrum Master &amp; mentor</h3>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--text-muted);">Coached cross-functional teams and mentored juniors into confident, autonomous practitioners.</p>
+        <span style="margin-top:auto; padding-top:16px; font-size:12px; color:var(--text-muted); letter-spacing:0.04em;">TEAMS · COACHING</span>
+      </div>
+      <div data-card="" style="scroll-snap-align:start; flex:0 0 320px; background:var(--card-dashed); border:1px dashed var(--border-dashed); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+        <span style="font-size:14px; color:var(--text-muted); line-height:1.6;">Your project<br>could be next.</span>
+        <a href="#contact" style="margin-top:14px; text-decoration:none; font-size:13px; color:var(--text); border:1px solid var(--border-strong); padding:9px 18px; border-radius:8px; transition:all .2s ease;" style-hover="background:var(--mint); border-color:var(--mint); color:var(--mint-ink);">Get in touch</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PHILOSOPHY (ikigai venn) ============================ -->
+<section id="philosophy" data-screen-label="Philosophy" style="scroll-margin-top:80px; max-width:1180px; margin:0 auto; padding:120px 40px;">
+  <div data-reveal="" style="text-align:center; max-width:620px; margin:0 auto 56px;">
+    <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">/* PHILOSOPHY */</div>
+    <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.02; letter-spacing:-0.03em; color:var(--text);">Why I do this</h2>
+    <p style="margin:18px 0 0; font-size:17px; line-height:1.6; color:var(--text-muted);">A reason to get up in the morning — where four circles overlap. I work async-first, and value transparency &amp; mutual trust.</p>
+  </div>
+
+  <div data-reveal="" style="position:relative; width:560px; height:540px; max-width:100%; margin:0 auto;">
+    <!-- circles -->
+    <div style="position:absolute; left:140px; top:20px; width:300px; height:300px; border-radius:50%; border:1.5px solid rgba(var(--mint-rgb),0.65); background:rgba(var(--mint-rgb),0.05);"></div>
+    <div style="position:absolute; left:20px; top:140px; width:300px; height:300px; border-radius:50%; border:1.5px solid rgba(var(--sky-rgb),0.65); background:rgba(var(--sky-rgb),0.05);"></div>
+    <div style="position:absolute; left:260px; top:140px; width:300px; height:300px; border-radius:50%; border:1.5px solid rgba(var(--pink-rgb),0.65); background:rgba(var(--pink-rgb),0.05);"></div>
+    <div style="position:absolute; left:140px; top:260px; width:300px; height:300px; border-radius:50%; border:1.5px solid rgba(var(--butter-rgb),0.65); background:rgba(var(--butter-rgb),0.05);"></div>
+    <!-- labels -->
+    <div style="position:absolute; left:50%; top:78px; transform:translateX(-50%); text-align:center; width:200px;"><div style="font-size:15px; font-weight:700; color:var(--mint);">What you love</div></div>
+    <div style="position:absolute; left:44px; top:50%; transform:translateY(-50%); text-align:center; width:150px;"><div style="font-size:15px; font-weight:700; color:var(--sky);">What you’re good at</div></div>
+    <div style="position:absolute; right:44px; top:50%; transform:translateY(-50%); text-align:center; width:150px;"><div style="font-size:15px; font-weight:700; color:var(--pink);">Where value flows</div></div>
+    <div style="position:absolute; left:50%; bottom:78px; transform:translateX(-50%); text-align:center; width:220px;"><div style="font-size:15px; font-weight:700; color:var(--butter-deep);">What the world needs</div></div>
+    <!-- center -->
+    <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center;">
+      <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:26px; letter-spacing:-0.02em; color:var(--text);">Ikigai</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">生き甲斐</div>
+    </div>
+  </div>
+
+  <div data-reveal="" style="max-width:680px; margin:48px auto 0; text-align:center;">
+    <p style="margin:0; font-size:15px; line-height:1.7; color:var(--text-body);">My approach is Design Thinking: only once the problem is truly identified can the right solution be found. Two degrees and years of experience taught me that the honest answer often matters more than the fast one.</p>
+  </div>
+</section>
+
+<!-- ============================ CONTACT ============================ -->
+<section id="contact" data-screen-label="Contact" style="scroll-margin-top:80px; background:var(--bg-alt); border-top:1px solid var(--surface-2); padding:110px 0;">
+  <div style="max-width:1180px; margin:0 auto; padding:0 40px; display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:start;">
+    <div data-reveal="">
+      <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.0; letter-spacing:-0.03em; color:var(--text);">Who I am</h2>
+      <p style="margin:22px 0 0; font-size:17px; line-height:1.65; color:var(--text-muted); max-width:420px;">Tell me where it hurts and I’ll tell you how I’d approach it. I work async-first — transparent, and built on mutual trust.</p>
+      <div style="display:flex; gap:36px; margin-top:36px;">
+        <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; color:var(--mint);">8+</div><div style="font-size:13px; color:var(--text-muted); margin-top:2px;">years, Agile</div></div>
+        <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; color:var(--sky);">4+</div><div style="font-size:13px; color:var(--text-muted); margin-top:2px;">years, CIO</div></div>
+        <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; color:var(--butter);">2</div><div style="font-size:13px; color:var(--text-muted); margin-top:2px;">degrees</div></div>
+      </div>
+    </div>
+    <form data-contact-form="" data-reveal="" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; gap:16px;">
+        <input name="name" required="" placeholder="Your name" style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; transition:border-color .2s ease;" style-focus="border-color:var(--mint);">
+        <input name="email" type="email" required="" placeholder="Email" style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; transition:border-color .2s ease;" style-focus="border-color:var(--mint);">
+      </div>
+      <textarea name="message" required="" rows="5" placeholder="What are you trying to solve?" style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; resize:vertical; transition:border-color .2s ease;" style-focus="border-color:var(--mint);"></textarea>
+      <button type="submit" style="align-self:flex-start; background:transparent; color:var(--text); font-weight:600; font-size:16px; padding:15px 32px; border-radius:8px; border:1px solid var(--border-btn); cursor:pointer; transition:all .2s ease;" style-hover="background:var(--mint); border-color:var(--mint); color:var(--mint-ink);">Send message</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============================ FOOTER ============================ -->
+<footer style="max-width:1180px; margin:0 auto; padding:30px 40px; display:flex; align-items:center; justify-content:space-between; font-size:13px; color:var(--text-muted);">
+  <div style="display:flex; align-items:center; gap:10px;"><div style="width:18px; height:18px; border-radius:5px; background:linear-gradient(135deg,var(--mint),var(--sky));"></div><span>© 2026 Yonkai</span></div>
+  <span>async · transparent · trusted</span>
+</footer>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+    <rect width="400" height="400" fill="var(--bg)"></rect>
+    <g style="mix-blend-mode:screen" opacity="0.9">
+      <circle cx="230" cy="150" r="78" fill="var(--mint)"></circle>
+      <circle cx="150" cy="190" r="82" fill="var(--sky)"></circle>
+      <circle cx="245" cy="240" r="74" fill="var(--pink)"></circle>
+      <circle cx="170" cy="255" r="70" fill="var(--butter)"></circle>
+    </g>
+    <text x="200" y="225" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="900" font-size="120" letter-spacing="-4" fill="var(--text)">Y</text>
+  </svg>
+</template></x-dc>
+</body>
+</html>

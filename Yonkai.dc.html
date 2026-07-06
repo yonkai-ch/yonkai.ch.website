@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&amp;family=Hanken+Grotesque:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&amp;text=%E7%9F%B3%E3%81%AE%E4%B8%8A%E3%81%AB%E3%82%82%E5%B9%B4%E3%80%82&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@900&amp;text=%EC%84%9C%EB%8B%B9%EA%B0%9C%EB%85%84%EC%9D%B4%EB%A9%B4%ED%92%8D%EC%9B%94%EC%9D%84%EC%9D%8A%EB%8A%94%EB%8B%A4%2E%20&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ===== Brand pastels ===== */
+    --mint:#8FDDC4;        --mint-rgb:143,221,196;
+    --sky:#A9D6F2;         --sky-rgb:169,214,242;
+    --butter:#F6EFA3;      --butter-rgb:246,239,163;
+    --pink:#F5A9C9;        --pink-rgb:245,169,201;
+    --butter-deep:#D8C95A; /* darker butter for text on light */
+    /* ===== Ink (dark text on a pastel fill) ===== */
+    --mint-ink:#16241d;
+    /* ===== Surfaces ===== */
+    --bg:#2A2A28;          --bg-rgb:42,42,40;
+    --bg-alt:#262624;
+    --card:#2e2e2c;
+    --card-dashed:#2b2b29;
+    --surface-2:#34342f;
+    /* ===== Text (3-tier scale) ===== */
+    --text:#ECEAE3;
+    --text-body:#C4C2B9;
+    --text-muted:#9C9A90;
+    /* ===== Borders ===== */
+    --border:#3a3a36;
+    --border-strong:#54544c;
+    --border-btn:#5a5a52;
+    --border-dashed:#4a4a44;
+  }
+
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Hanken Grotesque', sans-serif; -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--mint); color: var(--mint-ink); }
+  *::-webkit-scrollbar { height: 0; width: 0; }
+  @keyframes auroraDrift { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(40px,-30px) scale(1.12); } 66% { transform: translate(-30px,20px) scale(0.95); } }
+  @keyframes scrollBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  input, textarea { font-family: inherit; }
+  [data-flip]:focus { outline: none; }
+  [data-flip]:focus-visible { box-shadow: 0 0 0 3px rgba(236,234,227,0.5); }
+</style>
+<script>
+(function(){
+  /* ---- hero orb cursor parallax ---- */
+  var cx=0,cy=0,tx=0,ty=0,raf=null,hero=null,orbs=null;
+  function ensure(){ hero=document.getElementById('y-hero'); orbs=hero?hero.querySelectorAll('.y-orb'):null; return !!(hero&&orbs&&orbs.length); }
+  function apply(){
+    cx+=(tx-cx)*0.12; cy+=(ty-cy)*0.12;
+    for(var i=0;i<orbs.length;i++){ var o=orbs[i]; var d=parseFloat(o.getAttribute('data-depth'))||0.05; o.style.transform='translate('+(cx*d).toFixed(2)+'px,'+(cy*d).toFixed(2)+'px)'; }
+    if(Math.abs(tx-cx)>0.3||Math.abs(ty-cy)>0.3){ raf=requestAnimationFrame(apply); } else { raf=null; }
+  }
+  window.addEventListener('mousemove',function(e){
+    if(!ensure()) return;
+    var r=hero.getBoundingClientRect();
+    tx=e.clientX-(r.left+r.width/2); ty=e.clientY-(r.top+r.height/2);
+    if(!raf) raf=requestAnimationFrame(apply);
+  },{passive:true});
+
+  /* ---- references carousel: smooth scroll helper (nav handled in initCoverflow) ---- */
+  function animScrollTo(el, target){
+    var start=el.scrollLeft, dur=460, t0=Date.now();
+    var iv=setInterval(function(){
+      var p=Math.min((Date.now()-t0)/dur,1);
+      var e=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      el.scrollLeft=start+(target-start)*e;
+      if(p>=1) clearInterval(iv);
+    },16);
+  }
+
+  /* ---- contact form -> mailto ---- */
+  document.addEventListener('submit',function(e){
+    var f=e.target.closest('[data-contact-form]'); if(!f) return; e.preventDefault();
+    var fd=new FormData(f);
+    var name=(fd.get('name')||'').toString(), email=(fd.get('email')||'').toString(), msg=(fd.get('message')||'').toString();
+    var body=encodeURIComponent('From: '+name+' ('+email+')\n\n'+msg);
+    window.location.href='mailto:hello@yonkai.com?subject='+encodeURIComponent('Project inquiry from '+name)+'&body='+body;
+  });
+
+  /* ---- nav: per-item pastel (hover + active section via scroll-spy) ---- */
+  var cssroot=getComputedStyle(document.documentElement);
+  function cssvar(n){ return cssroot.getPropertyValue(n).trim(); }
+  var hovnav=null, curnav=null;
+  function paintLink(l){
+    var on=(l===hovnav)||(l.getAttribute('data-nav')===curnav);
+    l.style.color=on?cssvar(l.getAttribute('data-color')):cssvar(l.getAttribute('data-base'));
+    if(l.hasAttribute('data-btn')) l.style.borderColor=on?cssvar(l.getAttribute('data-color')):cssvar('--border-strong');
+  }
+  function paintNav(){ var ls=document.querySelectorAll('[data-nav]'); for(var i=0;i<ls.length;i++) paintLink(ls[i]); }
+  document.addEventListener('pointerover',function(e){ var l=e.target.closest&&e.target.closest('[data-nav]'); if(l){ hovnav=l; paintNav(); } });
+  document.addEventListener('pointerout',function(e){ var l=e.target.closest&&e.target.closest('[data-nav]'); if(l&&l===hovnav){ hovnav=null; paintNav(); } });
+  function initSpy(){
+    paintNav();
+    var ids=['services','references','philosophy','contact'];
+    var ticking=false;
+    function update(){
+      ticking=false;
+      var line=window.innerHeight/2; /* middle of the screen */
+      var cur=null;
+      for(var i=0;i<ids.length;i++){ var s=document.getElementById(ids[i]); if(s && s.getBoundingClientRect().top<=line) cur=ids[i]; }
+      if(cur!==curnav){ curnav=cur; paintNav(); }
+    }
+    function onscr(){ if(!ticking){ ticking=true; requestAnimationFrame(update); } }
+    window.addEventListener('scroll', onscr, {passive:true});
+    window.addEventListener('resize', onscr, {passive:true});
+    update();
+  }
+
+  /* ---- scroll reveal (progressive enhancement) ---- */
+  function initReveal(){
+    var els=[].slice.call(document.querySelectorAll('[data-reveal]'));
+    if(!els.length) return;
+    if(!('IntersectionObserver' in window)){ return; }
+    els.forEach(function(el,i){
+      el._ot=el.style.transition||''; /* remember original (e.g. card hover) transition */
+      el.style.opacity='0';
+      el.style.transform='translateY(20px)';
+      el.style.transition='opacity .7s cubic-bezier(.2,.7,.2,1) '+(i%4*0.06)+'s, transform .7s cubic-bezier(.2,.7,.2,1) '+(i%4*0.06)+'s';
+    });
+    function settle(el){ el.style.transform=''; el.style.transition=el._ot||''; }
+    var io=new IntersectionObserver(function(ents){
+      ents.forEach(function(en){ if(en.isIntersecting){ var t=en.target; t.style.opacity='1'; t.style.transform='none'; io.unobserve(t); setTimeout(function(){ settle(t); }, 1000); } });
+    },{threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+    els.forEach(function(el){ io.observe(el); });
+    setTimeout(function(){ els.forEach(function(el){ el.style.opacity='1'; settle(el); }); }, 2500);
+  }
+  /* ---- hero headline language rotator (vertical roll + blur) ---- */
+  function initRotator(){
+    var el=document.getElementById('rot-head');
+    var plist=document.getElementById('rot-phrases');
+    if(!el||!plist) return;
+    var phrases=[].map.call(plist.querySelectorAll('li'),function(li){ return li.textContent.trim(); }).filter(Boolean);
+    if(phrases.length<2){ if(phrases[0]) el.textContent=phrases[0]; return; }
+    el.textContent=phrases[0];
+    var idx=0;
+    var easeout='opacity .42s ease, transform .42s cubic-bezier(.55,0,.9,.35), filter .42s ease';
+    var easein='opacity .55s ease, transform .6s cubic-bezier(.16,1,.3,1), filter .55s ease';
+    setInterval(function(){
+      el.style.transition=easeout;
+      el.style.opacity='0';
+      el.style.transform='translateY(-42px)';
+      el.style.filter='blur(7px)';
+      setTimeout(function(){
+        idx=(idx+1)%phrases.length;
+        el.textContent=phrases[idx];
+        el.style.transition='none';
+        el.style.transform='translateY(46px)';
+        el.style.filter='blur(7px)';
+        void el.offsetWidth;
+        el.style.transition=easein;
+        el.style.opacity='1';
+        el.style.transform='translateY(0)';
+        el.style.filter='blur(0)';
+      },440);
+    },3600);
+  }
+
+  /* ---- keyword random color glow ---- */
+  function initkw(){
+    var kws=[].slice.call(document.querySelectorAll('[data-kw]'));
+    if(!kws.length) return;
+    var last=-1;
+    function glow(){
+      var i;
+      do { i=Math.floor(Math.random()*kws.length); } while(kws.length>1 && i===last);
+      last=i;
+      var pick=kws[i];
+      pick.style.color=cssvar(pick.getAttribute('data-kw'));
+      setTimeout(function(){ pick.style.color=''; }, 900+Math.random()*800);
+      setTimeout(glow, 650+Math.random()*2200);
+    }
+    setTimeout(glow, 1000);
+  }
+
+  /* ---- services: flip cards — hover (mouse) peeks, click/tap pins, keyboard toggles ---- */
+  function initflip(){
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    [].forEach.call(document.querySelectorAll('[data-flip]'), function(box){
+      var inner = box.querySelector('[data-flip-inner]');
+      if(!inner) return;
+      if(reduce) inner.style.transition='none';
+      var pinned=false;
+      function setf(f){ inner.style.transform = f ? 'rotateY(180deg)' : 'none'; box.setAttribute('aria-pressed', f ? 'true':'false'); }
+      box.addEventListener('pointerenter', function(e){ if(e.pointerType && e.pointerType!=='mouse') return; if(!pinned) setf(true); });
+      box.addEventListener('pointerleave', function(e){ if(e.pointerType && e.pointerType!=='mouse') return; if(!pinned) setf(false); });
+      box.addEventListener('click', function(){ pinned=!pinned; setf(pinned); });
+      box.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pinned=!pinned; setf(pinned); } });
+    });
+  }
+
+  /* ---- references: circular coverflow — infinite loop, wrap neighbor always visible ---- */
+  function initCoverflow(){
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var track = document.querySelector('[data-carousel-track]');
+    if(!track) return;
+    var all = [].slice.call(track.querySelectorAll('[data-card]'));
+    all.filter(function(c){ return c.querySelector('a[href="#contact"]'); }).forEach(function(c){ c.style.display='none'; });
+    var cards = all.filter(function(c){ return !c.querySelector('a[href="#contact"]'); });
+    var n = cards.length;
+    if(!n) return;
+    var h = Math.max.apply(null, cards.map(function(c){ return c.offsetHeight; }));
+    var cw = cards[0].offsetWidth;
+    /* turn the flex scroll track into an absolute stage */
+    track.style.position='relative'; track.style.overflow='hidden'; track.style.display='block';
+    track.style.scrollSnapType='none'; track.style.paddingBottom='0'; track.style.height=h+'px';
+    cards.forEach(function(c){
+      c.style.position='absolute'; c.style.top='50%'; c.style.left='50%';
+      c.style.marginLeft=(-cw/2)+'px'; c.style.transformOrigin='center center';
+      c.style.transition = reduce ? 'none' : 'transform .55s cubic-bezier(.2,.7,.2,1), opacity .55s ease';
+      c.style.willChange='transform, opacity';
+    });
+    var spacing;
+    function calcsp(){ spacing = Math.min(cw*0.82, (track.clientWidth - cw)/2 + cw*0.28); }
+    var current = Math.min(1, n-1); /* default: second card centered */
+    function circoff(i){ var raw=i-current; while(raw>n/2) raw-=n; while(raw<-n/2) raw+=n; return raw; }
+    function render(){
+      cards.forEach(function(c,i){
+        var o=circoff(i), ao=Math.abs(o);
+        var scale = 1 - Math.min(ao,2)*0.16;
+        c.style.transform = 'translate('+(o*spacing).toFixed(1)+'px, -50%) scale('+scale.toFixed(3)+')';
+        c.style.opacity = ao>2 ? '0' : (1 - Math.min(ao,2)*0.42).toFixed(3);
+        c.style.zIndex = String(100 - Math.round(ao*10));
+        c.style.pointerEvents = ao<0.5 ? 'auto' : 'none';
+      });
+    }
+    function go(d){ current=(current+d+n)%n; render(); }
+    var carousel = track.closest('[data-carousel]');
+    var prev = carousel && carousel.querySelector('[data-carousel-prev]');
+    var next = carousel && carousel.querySelector('[data-carousel-next]');
+    if(prev) prev.addEventListener('click', function(){ go(-1); });
+    if(next) next.addEventListener('click', function(){ go(1); });
+    /* drag / swipe */
+    var down=false, sx=0, moved=false;
+    track.addEventListener('pointerdown', function(e){ down=true; sx=e.clientX; moved=false; });
+    window.addEventListener('pointermove', function(e){ if(!down) return; if(!moved && Math.abs(e.clientX-sx)>45){ moved=true; go(e.clientX<sx?1:-1); } });
+    window.addEventListener('pointerup', function(){ down=false; });
+    window.addEventListener('resize', function(){ calcsp(); render(); }, {passive:true});
+    calcsp(); render();
+  }
+
+  var booted=false;
+  function boot(){ if(booted) return; booted=true; initReveal(); initSpy(); initRotator(); initkw(); initflip(); initCoverflow(); }
+  if(document.readyState!=='loading'){ setTimeout(boot,300); }
+  window.addEventListener('load', boot);
+})();
+</script>
+</helmet>
+
+<!-- ============================ NAV ============================ -->
+<nav style="position:fixed; top:0; left:0; right:0; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:18px 40px; background:rgba(var(--bg-rgb),0.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--border);">
+  <a href="#top" style="display:flex; align-items:center; gap:11px; text-decoration:none;">
+    <div style="width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,var(--mint),var(--sky));"></div>
+    <span style="font-weight:700; font-size:19px; letter-spacing:-0.01em; color:var(--text);">Yonkai</span>
+  </a>
+  <div style="display:flex; gap:8px; align-items:center; font-size:14px; font-weight:600;">
+    <a href="#services" data-nav="services" data-color="--mint" data-base="--text-body" style="text-decoration:none; color:var(--text-body); padding:8px 14px; border-radius:8px; transition:color .25s ease;">Services</a>
+    <a href="#references" data-nav="references" data-color="--sky" data-base="--text-body" style="text-decoration:none; color:var(--text-body); padding:8px 14px; border-radius:8px; transition:color .25s ease;">References</a>
+    <a href="#philosophy" data-nav="philosophy" data-color="--butter" data-base="--text-body" style="text-decoration:none; color:var(--text-body); padding:8px 14px; border-radius:8px; transition:color .25s ease;">Philosophy</a>
+    <a href="#contact" data-nav="contact" data-color="--pink" data-base="--text-body" style="text-decoration:none; color:var(--text-body); padding:8px 14px; border-radius:8px; transition:color .25s ease;">Contact</a>
+  </div>
+</nav>
+
+<!-- ============================ HERO ============================ -->
+<header id="top" data-screen-label="Hero">
+  <div id="y-hero" style="position:relative; overflow:hidden; min-height:100vh; display:flex; align-items:center; padding-top:96px; box-sizing:border-box;">
+    <div style="position:absolute; top:50%; right:-60px; transform:translateY(-50%) scale(1.18); transform-origin:center right; width:680px; height:680px; pointer-events:none;">
+      <div class="y-orb" data-depth="0.06" style="position:absolute; top:60px; left:240px; width:340px; height:340px; will-change:transform;"><div style="width:100%; height:100%; border-radius:50%; background:var(--mint); mix-blend-mode:screen; filter:blur(6px); opacity:0.9; animation:auroraDrift 17s ease-in-out infinite;"></div></div>
+      <div class="y-orb" data-depth="0.11" style="position:absolute; top:150px; left:60px; width:360px; height:360px; will-change:transform;"><div style="width:100%; height:100%; border-radius:50%; background:var(--sky); mix-blend-mode:screen; filter:blur(6px); opacity:0.85; animation:auroraDrift 21s ease-in-out infinite 1.5s;"></div></div>
+      <div class="y-orb" data-depth="0.045" style="position:absolute; top:300px; left:250px; width:320px; height:320px; will-change:transform;"><div style="width:100%; height:100%; border-radius:50%; background:var(--butter); mix-blend-mode:screen; filter:blur(6px); opacity:0.7; animation:auroraDrift 19s ease-in-out infinite 3s;"></div></div>
+      <div class="y-orb" data-depth="0.14" style="position:absolute; top:250px; left:120px; width:300px; height:300px; will-change:transform;"><div style="width:100%; height:100%; border-radius:50%; background:var(--pink); mix-blend-mode:screen; filter:blur(6px); opacity:0.8; animation:auroraDrift 23s ease-in-out infinite 2s;"></div></div>
+    </div>
+    <div style="position:absolute; inset:0; background:linear-gradient(90deg,var(--bg) 36%,rgba(var(--bg-rgb),0.35) 62%,transparent 82%); pointer-events:none;"></div>
+    <div style="position:relative; z-index:3; width:100%; max-width:1180px; margin:0 auto; padding:0 40px;">
+      <div style="max-width:760px;">
+        <div style="height:190px; display:flex; align-items:flex-end; overflow:hidden;">
+          <h1 id="rot-head" style="margin:0; font-family:'Archivo','Noto Sans JP','Noto Sans KR',sans-serif; font-weight:900; font-size:88px; line-height:1.06; letter-spacing:-0.03em; color:var(--text); word-break:keep-all;">3rd time is the charm.</h1>
+        </div>
+        <!-- Headline rotation phrases — edit / add / reorder <li> items freely -->
+        <ul id="rot-phrases" hidden="" style="display:none;">
+          <li>3rd time is the charm.</li>
+          <li>石の上にも3年。</li>
+          <li>Aller guten Dinge sind 3.</li>
+          <li>서당 개 3년이면 풍월을 읊는다.</li>
+        </ul>
+        <h1 style="margin:14px 0 0; font-family:'Archivo',sans-serif; font-weight:900; font-size:88px; line-height:0.9; letter-spacing:-0.04em; color:var(--mint);">Why stop there?</h1>
+        <p style="margin:30px 0 0; font-size:20px; line-height:1.6; color:var(--text-body); max-width:480px;">It’s never too early to start thinking about <span data-kw="--pink" style="transition:color .8s ease;">scalability</span> and <span data-kw="--sky" style="transition:color .8s ease;">efficiency</span> of your <span data-kw="--butter" style="transition:color .8s ease;">processes</span> – the smaller you are, the more precious your time is.</p>
+        <div style="display:flex; gap:22px; align-items:center; margin-top:40px;">
+          <a href="#contact" style="text-decoration:none; color:var(--text); font-weight:600; padding:15px 30px; border-radius:8px; border:1px solid var(--border-btn); font-size:16px; transition:color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;" style-hover="border-color:var(--pink); color:var(--pink); box-shadow:0 0 0 1px var(--pink), 0 12px 30px rgba(var(--pink-rgb),0.14); transform:translateY(-2px);">Start a conversation</a>
+        </div>
+      </div>
+    </div>
+    <a href="#services" aria-label="Scroll to services" style="position:absolute; left:50%; bottom:32px; transform:translateX(-50%); z-index:3; display:flex; flex-direction:column; align-items:center; gap:10px; text-decoration:none; color:var(--text-muted); transition:color .25s ease;" style-hover="color:var(--text);">
+      <span style="font-size:12px; letter-spacing:0.2em; text-transform:uppercase;">See my services</span>
+      <span style="display:block; animation:scrollBob 1.8s ease-in-out infinite; font-size:20px; line-height:1;">↓</span>
+    </a>
+  </div>
+</header>
+
+<!-- ============================ SERVICES ============================ -->
+<section id="services" data-screen-label="Services" style="scroll-margin-top:80px; max-width:1180px; margin:0 auto; padding:120px 40px 90px;">
+  <div data-reveal="" style="text-align:center; max-width:900px; margin:0 auto 48px;">
+    <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">/* SERVICES */</div>
+    <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.02; letter-spacing:-0.03em; color:var(--text); white-space:nowrap;">How I can help</h2>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px;">
+
+    <div data-reveal="" style="display:flex; flex-direction:column;">
+      <h3 style="margin:0 0 14px; font-size:22px; font-weight:800; color:var(--sky); text-align:center;">Agile Coaching</h3>
+      <div data-flip="" tabindex="0" role="button" aria-label="Agile Coaching — reveal how I help" style="perspective:1400px; cursor:pointer; border-radius:16px; outline:none; flex:1;">
+        <div data-flip-inner="" style="display:grid; width:100%; height:100%; transition:transform .6s cubic-bezier(.2,.7,.2,1); transform-style:preserve-3d;">
+          <div style="grid-area:1/1; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:linear-gradient(180deg,var(--sky) 0,var(--sky) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:20px 26px; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,0.18); ">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--sky); margin:0 0 20px;">Problem Statement</div>
+            <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px;">
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--sky);"></span>Standups happen, but nothing actually moves</li>
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--sky);"></span>Instead of collaborating, stakeholders and the team pull in opposite directions</li>
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--sky);"></span>Agile is only on paper, the reality is chaos</li>
+            </ul>
+            <div style="margin-top:auto; padding-top:12px; display:flex; align-items:center; justify-content:flex-end; gap:6px; font-size:11px; font-weight:600; letter-spacing:0.04em; color:var(--sky);">See my solution<span style="font-size:14px; line-height:1;">↺</span></div>
+          </div>
+          <div style="grid-area:1/1; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:linear-gradient(180deg,var(--sky) 0,var(--sky) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:20px 26px; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,0.18); transform:rotateY(180deg);">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--sky); margin:0 0 10px;">My Solution</div>
+            <p style="margin:0; font-size:12.5px; line-height:1.7; color:var(--text-body);">Agile frameworks are primarily a mindset, not a rulebook, which is exactly why they work. Over the past decade, I have worked in various Scrum teams and salvaged chaotic agile projects by incorporating my practical experience. My main goal is to leave each project self-sufficient even after I step away.</p>
+            <div style="margin-top:auto; padding-top:14px; display:flex; flex-wrap:wrap; gap:7px;"><span style="font-size:11px; color:var(--sky); border:1px solid rgba(var(--sky-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">Scrum</span><span style="font-size:11px; color:var(--sky); border:1px solid rgba(var(--sky-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">PSPO I</span><span style="font-size:11px; color:var(--sky); border:1px solid rgba(var(--sky-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">SAFe</span><span style="font-size:11px; color:var(--sky); border:1px solid rgba(var(--sky-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">HERMES</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-reveal="" style="display:flex; flex-direction:column;">
+      <h3 style="margin:0 0 14px; font-size:22px; font-weight:800; color:var(--butter); text-align:center;">Solution Design</h3>
+      <div data-flip="" tabindex="0" role="button" aria-label="Solution Design — reveal how I help" style="perspective:1400px; cursor:pointer; border-radius:16px; outline:none; flex:1;">
+        <div data-flip-inner="" style="display:grid; width:100%; height:100%; transition:transform .6s cubic-bezier(.2,.7,.2,1); transform-style:preserve-3d;">
+          <div style="grid-area:1/1; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:linear-gradient(180deg,var(--butter) 0,var(--butter) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:20px 26px; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,0.18); ">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--butter); margin:0 0 20px;">Problem Statement</div>
+            <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px;">
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--butter);"></span>Every sprint reopens previously completed tasks</li>
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--butter);"></span>Engineers and stakeholders are not aligned</li>
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--butter);"></span>The implementation starts before anyone agrees what “done” really means</li>
+            </ul>
+            <div style="margin-top:auto; padding-top:12px; display:flex; align-items:center; justify-content:flex-end; gap:6px; font-size:11px; font-weight:600; letter-spacing:0.04em; color:var(--butter);">See my solution<span style="font-size:14px; line-height:1;">↺</span></div>
+          </div>
+          <div style="grid-area:1/1; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:linear-gradient(180deg,var(--butter) 0,var(--butter) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:20px 26px; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,0.18); transform:rotateY(180deg);">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--butter); margin:0 0 10px;">My Solution</div>
+            <p style="margin:0; font-size:12.5px; line-height:1.7; color:var(--text-body);">I do the thinking that saves the building. I get everyone seeing the same system, the same scope, and the same priorities before the work begins, so momentum holds when surprises arrive later. Forged in regulated industries (banking and public sector) and workflow automation, including a CHF 25M+ greenfield project.</p>
+            <div style="margin-top:auto; padding-top:14px; display:flex; flex-wrap:wrap; gap:7px;"><span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">UML</span><span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">arc42</span><span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">KYC Onboarding</span><span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">SaaS</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-reveal="" style="display:flex; flex-direction:column;">
+      <h3 style="margin:0 0 14px; font-size:22px; font-weight:800; color:var(--pink); text-align:center;">Business Architecture</h3>
+      <div data-flip="" tabindex="0" role="button" aria-label="Business Architecture — reveal how I help" style="perspective:1400px; cursor:pointer; border-radius:16px; outline:none; flex:1;">
+        <div data-flip-inner="" style="display:grid; width:100%; height:100%; transition:transform .6s cubic-bezier(.2,.7,.2,1); transform-style:preserve-3d;">
+          <div style="grid-area:1/1; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:linear-gradient(180deg,var(--pink) 0,var(--pink) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:20px 26px; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,0.18); ">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--pink); margin:0 0 20px;">Problem Statement</div>
+            <ul style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px;">
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--pink);"></span>Scaling the organization multiplies problems faster than returns</li>
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--pink);"></span>Everything still routes through a few key people</li>
+            <li style="font-size:13.5px; color:var(--text-body); line-height:1.7; padding-left:16px; position:relative;"><span style="position:absolute; left:0; top:8.5px; width:6px; height:6px; border-radius:50%; background:var(--pink);"></span>Strategic initiatives start strong, then quietly fade</li>
+            </ul>
+            <div style="margin-top:auto; padding-top:12px; display:flex; align-items:center; justify-content:flex-end; gap:6px; font-size:11px; font-weight:600; letter-spacing:0.04em; color:var(--pink);">See my solution<span style="font-size:14px; line-height:1;">↺</span></div>
+          </div>
+          <div style="grid-area:1/1; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:linear-gradient(180deg,var(--pink) 0,var(--pink) 3px,var(--card) 3px); border:1px solid var(--border); border-radius:16px; padding:20px 26px; display:flex; flex-direction:column; box-shadow:0 8px 24px rgba(0,0,0,0.18); transform:rotateY(180deg);">
+            <div style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--pink); margin:0 0 10px;">My Solution</div>
+            <p style="margin:0; font-size:12.5px; line-height:1.7; color:var(--text-body);">Complexity and ambiguity are where I thrive. I map how a business really runs and rebuild it around roles and processes that scale, so growth pays off, expertise stops bottlenecking, and big initiatives actually land. As both Business Analyst and Enterprise Architect, I have done exactly this at the executive level.</p>
+            <div style="margin-top:auto; padding-top:14px; display:flex; flex-wrap:wrap; gap:7px;"><span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">ISO 27001</span><span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">BPMN</span><span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">ITIL</span><span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">FINMA</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Fractional CIO — distinct 'catch-all' closing band -->
+  <div data-reveal="" style="margin-top:40px; text-align:center;">
+    <div style="display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:16px;">
+      <span style="height:1px; width:60px; background:var(--border);"></span>
+      <span style="font-size:14px; font-style:italic; color:var(--text-muted);">Why stop there?</span>
+      <span style="height:1px; width:60px; background:var(--border);"></span>
+    </div>
+  </div>
+  <div data-reveal="" style="position:relative; overflow:hidden; border:1px solid var(--border); border-radius:20px; padding:30px 44px; background:var(--bg-alt); text-align:center;">
+    <div style="position:relative;">
+      <h3 style="margin:0 auto 12px; font-size:22px; font-weight:800; letter-spacing:-0.01em; color:var(--mint);">Fractional CIO</h3>
+      <p style="margin:0 auto; font-size:16px; line-height:1.65; color:var(--text-body); max-width:600px;">In case you do not know where to start and all your business processes and IT infrastructure gets the best of you, I step in.&nbsp;As your part-time CIO, I take care of whatever your business needs so you can really focus on what you do best.</p>
+      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:20px;">
+        <span style="font-size:12px; color:var(--mint); border:1px solid rgba(var(--mint-rgb),0.4); border-radius:999px; padding:5px 14px; letter-spacing:0.04em;">IT Strategy</span>
+        <span style="font-size:12px; color:var(--mint); border:1px solid rgba(var(--mint-rgb),0.4); border-radius:999px; padding:5px 14px; letter-spacing:0.04em;">Governance, Risk &amp; Compliance</span>
+        <span style="font-size:12px; color:var(--mint); border:1px solid rgba(var(--mint-rgb),0.4); border-radius:999px; padding:5px 14px; letter-spacing:0.04em;">Vendor &amp; Partner Network</span>
+        <span style="font-size:12px; color:var(--mint); border:1px solid rgba(var(--mint-rgb),0.4); border-radius:999px; padding:5px 14px; letter-spacing:0.04em;">Digital Transformation</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ REFERENCES (carousel) ============================ -->
+<section id="references" data-screen-label="References" style="scroll-margin-top:80px; background:var(--bg-alt); border-top:1px solid var(--surface-2); border-bottom:1px solid var(--surface-2); padding:100px 0;">
+  <div data-carousel="" style="max-width:1180px; margin:0 auto; padding:0 40px;">
+    <div data-reveal="" style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:40px;">
+      <div style="max-width:620px;">
+        <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">// REFERENCES</div>
+        <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.02; letter-spacing:-0.03em; color:var(--text);">What I’ve done</h2>
+        <p style="margin:18px 0 0; font-size:17px; line-height:1.6; color:var(--text-muted);">Years of projects and clients across coaching, strategy and design. Drag or use the arrows to browse.</p>
+      </div>
+      <div style="display:flex; gap:10px; flex:none;">
+        <button data-carousel-prev="" aria-label="Previous" style="width:46px; height:46px; border-radius:50%; background:transparent; border:1px solid var(--border-strong); color:var(--text); font-size:18px; cursor:pointer; transition:all .2s ease;" style-hover="border-color:var(--text); background:var(--surface-2);">←</button>
+        <button data-carousel-next="" aria-label="Next" style="width:46px; height:46px; border-radius:50%; background:transparent; border:1px solid var(--border-strong); color:var(--text); font-size:18px; cursor:pointer; transition:all .2s ease;" style-hover="border-color:var(--text); background:var(--surface-2);">→</button>
+      </div>
+    </div>
+    <div data-carousel-track="" data-reveal="" style="display:flex; gap:20px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:8px; scrollbar-width:none;">
+      <div data-card="" style="scroll-snap-align:center; flex:0 0 320px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--butter);">
+        <span style="font-size:13px; color:var(--butter); font-weight:600;">2022 –&nbsp;2025</span>
+        <h3 style="margin:12px 0 8px; font-size:20px; font-weight:700; color:var(--text);">Public Greenfield Project</h3>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--text-muted);">As Product Owner, I was responsible for the entire software development lifecycle, from idea to release, implementing a workflow engine with over 100+ business processes, all processing highly sensitive data in a highly complex environment.</p>
+        <div style="margin-top:auto; padding-top:16px; display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
+          <span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">Public Sector</span>
+          <span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">CHF 25M+</span>
+          <span style="font-size:11px; color:var(--butter); border:1px solid rgba(var(--butter-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">HERMES</span>
+          
+        </div>
+      </div>
+      <div data-card="" style="scroll-snap-align:center; flex:0 0 320px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--mint);">
+        <span style="font-size:13px; color:var(--mint); font-weight:600;">2025+</span>
+        <h3 style="margin:10px 0 8px; font-size:20px; font-weight:700; color:var(--text);">Right hand of the CEO</h3>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--text-muted);">At Primesites GmbH, I assumed the role of the CTO with the aim to setup the tech stack and business architecture for future-oriented growth. Within the first months, I decreased fixed cost of tools by over 70%. At the same time, I established the foundations for effective project execution by recruiting and mentoring industry experts in design, development, and project management.</p>
+        <div style="margin-top:auto; padding-top:16px; display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
+          <span style="font-size:11px; color:var(--mint); border:1px solid rgba(var(--mint-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">IT Infrastructure</span>
+          <span style="font-size:11px; color:var(--mint); border:1px solid rgba(var(--mint-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">IT Strategy</span>
+          <span style="font-size:11px; color:var(--mint); border:1px solid rgba(var(--mint-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">Recruiting</span>
+        </div>
+      </div>
+      <div data-card="" style="scroll-snap-align:center; flex:0 0 320px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--pink);">
+        <span style="font-size:13px; color:var(--pink); font-weight:600;">2024 – 2025</span>
+        <h3 style="margin:10px 0 8px; font-size:20px; font-weight:700; color:var(--text);">Security, made the standard</h3>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--text-muted);">As Enterprise Architect in a SME, I led the implementation of the internal Information Security Management System based on ISO 27001, raising security and compliance across the company. Building on that, I streamlined workflows and rolled out new standards and initiatives, such as GRC software, to make strong security the default.</p>
+        <div style="margin-top:auto; padding-top:16px; display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
+          <span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">ISO 27001</span>
+          <span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">ISMS</span>
+          <span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">GRC</span>
+        </div>
+      </div>
+      <div data-card="" style="scroll-snap-align:center; flex:0 0 320px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--pink);">
+      <div data-card="" style="scroll-snap-align:center; flex:0 0 320px; background:var(--card-dashed); border:1px dashed var(--border-dashed); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+        <span style="font-size:14px; color:var(--text-muted); line-height:1.6;">Your project<br>could be next.</span>
+        <a href="#contact" style="margin-top:14px; text-decoration:none; font-size:13px; color:var(--text); border:1px solid var(--border-strong); padding:9px 18px; border-radius:8px; transition:all .2s ease;" style-hover="background:var(--mint); border-color:var(--mint); color:var(--mint-ink);">Get in touch</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PHILOSOPHY (ikigai venn) ============================ -->
+<section id="philosophy" data-screen-label="Philosophy" style="scroll-margin-top:80px; max-width:1180px; margin:0 auto; padding:120px 40px;">
+  <div data-reveal="" style="text-align:center; max-width:620px; margin:0 auto 56px;">
+    <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">/* PHILOSOPHY */</div>
+    <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.02; letter-spacing:-0.03em; color:var(--text);">Why I do this</h2>
+    <p style="margin:18px 0 0; font-size:17px; line-height:1.6; color:var(--text-muted);">A reason to get up in the morning — where four circles overlap. I work async-first, and value transparency &amp; mutual trust.</p>
+  </div>
+
+  <div data-reveal="" style="position:relative; width:560px; height:540px; max-width:100%; margin:0 auto;">
+    <!-- circles -->
+    <div style="position:absolute; left:140px; top:20px; width:300px; height:300px; border-radius:50%; border:1.5px solid rgba(var(--mint-rgb),0.65); background:rgba(var(--mint-rgb),0.05);"></div>
+    <div style="position:absolute; left:20px; top:140px; width:300px; height:300px; border-radius:50%; border:1.5px solid rgba(var(--sky-rgb),0.65); background:rgba(var(--sky-rgb),0.05);"></div>
+    <div style="position:absolute; left:260px; top:140px; width:300px; height:300px; border-radius:50%; border:1.5px solid rgba(var(--pink-rgb),0.65); background:rgba(var(--pink-rgb),0.05);"></div>
+    <div style="position:absolute; left:140px; top:260px; width:300px; height:300px; border-radius:50%; border:1.5px solid rgba(var(--butter-rgb),0.65); background:rgba(var(--butter-rgb),0.05);"></div>
+    <!-- labels -->
+    <div style="position:absolute; left:50%; top:78px; transform:translateX(-50%); text-align:center; width:200px;"><div style="font-size:15px; font-weight:700; color:var(--mint);">What you love</div></div>
+    <div style="position:absolute; left:44px; top:50%; transform:translateY(-50%); text-align:center; width:150px;"><div style="font-size:15px; font-weight:700; color:var(--sky);">What you’re good at</div></div>
+    <div style="position:absolute; right:44px; top:50%; transform:translateY(-50%); text-align:center; width:150px;"><div style="font-size:15px; font-weight:700; color:var(--pink);">Where value flows</div></div>
+    <div style="position:absolute; left:50%; bottom:78px; transform:translateX(-50%); text-align:center; width:220px;"><div style="font-size:15px; font-weight:700; color:var(--butter-deep);">What the world needs</div></div>
+    <!-- center -->
+    <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); text-align:center;">
+      <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:26px; letter-spacing:-0.02em; color:var(--text);">Ikigai</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">生き甲斐</div>
+    </div>
+  </div>
+
+  <div data-reveal="" style="max-width:680px; margin:48px auto 0; text-align:center;">
+    <p style="margin:0; font-size:15px; line-height:1.7; color:var(--text-body);">My approach is Design Thinking: only once the problem is truly identified can the right solution be found. Two degrees and years of experience taught me that the honest answer often matters more than the fast one.</p>
+  </div>
+</section>
+
+<!-- ============================ CONTACT ============================ -->
+<section id="contact" data-screen-label="Contact" style="scroll-margin-top:80px; background:var(--bg-alt); border-top:1px solid var(--surface-2); padding:110px 0;">
+  <div style="max-width:1180px; margin:0 auto; padding:0 40px; display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:start;">
+    <div data-reveal="">
+      <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.0; letter-spacing:-0.03em; color:var(--text);">Who I am</h2>
+      <p style="margin:22px 0 0; font-size:17px; line-height:1.65; color:var(--text-muted); max-width:420px;">Tell me where it hurts and I’ll tell you how I’d approach it. I work async-first — transparent, and built on mutual trust.</p>
+      <div style="display:flex; gap:36px; margin-top:36px;">
+        <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; color:var(--mint);">8+</div><div style="font-size:13px; color:var(--text-muted); margin-top:2px;">years, Agile</div></div>
+        <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; color:var(--sky);">4+</div><div style="font-size:13px; color:var(--text-muted); margin-top:2px;">years, CIO</div></div>
+        <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:30px; color:var(--butter);">2</div><div style="font-size:13px; color:var(--text-muted); margin-top:2px;">degrees</div></div>
+      </div>
+    </div>
+    <form data-contact-form="" data-reveal="" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; gap:16px;">
+        <input name="name" required="" placeholder="Your name" style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; transition:border-color .2s ease;" style-focus="border-color:var(--mint);">
+        <input name="email" type="email" required="" placeholder="Email" style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; transition:border-color .2s ease;" style-focus="border-color:var(--mint);">
+      </div>
+      <textarea name="message" required="" rows="5" placeholder="What are you trying to solve?" style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; resize:vertical; transition:border-color .2s ease;" style-focus="border-color:var(--mint);"></textarea>
+      <button type="submit" style="align-self:flex-start; background:transparent; color:var(--text); font-weight:600; font-size:16px; padding:15px 32px; border-radius:8px; border:1px solid var(--border-btn); cursor:pointer; transition:all .2s ease;" style-hover="background:var(--mint); border-color:var(--mint); color:var(--mint-ink);">Send message</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============================ FOOTER ============================ -->
+<footer style="max-width:1180px; margin:0 auto; padding:30px 40px; display:flex; align-items:center; justify-content:space-between; font-size:13px; color:var(--text-muted);">
+  <div style="display:flex; align-items:center; gap:10px;"><div style="width:18px; height:18px; border-radius:5px; background:linear-gradient(135deg,var(--mint),var(--sky));"></div><span>© 2026 Yonkai</span></div>
+  <span>async · transparent · trusted</span>
+</footer>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+    <rect width="400" height="400" fill="var(--bg)"></rect>
+    <g style="mix-blend-mode:screen" opacity="0.9">
+      <circle cx="230" cy="150" r="78" fill="var(--mint)"></circle>
+      <circle cx="150" cy="190" r="82" fill="var(--sky)"></circle>
+      <circle cx="245" cy="240" r="74" fill="var(--pink)"></circle>
+      <circle cx="170" cy="255" r="70" fill="var(--butter)"></circle>
+    </g>
+    <text x="200" y="225" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="900" font-size="120" letter-spacing="-4" fill="var(--text)">Y</text>
+  </svg>
+</template></x-dc>
+</body>
+</html>
