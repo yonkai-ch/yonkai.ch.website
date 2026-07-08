@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script src="./image-slot.js"></script>
 </head>
 <body>
 <x-dc>
@@ -108,6 +109,7 @@
     #contact > div { grid-template-columns:1fr !important; gap:36px !important; padding-left:22px !important; padding-right:22px !important; }
     #contact form > div { flex-direction:column !important; }
     #contact form[data-contact-form] { margin-top:0 !important; }
+    #contact > div { grid-template-columns:1fr !important; gap:36px !important; }
 
     footer { padding:24px 22px !important; flex-direction:column; gap:10px; text-align:center; }
     #cio-band { padding-left:18px !important; padding-right:18px !important; }
@@ -155,7 +157,7 @@
     /* no backend configured yet -> open an email draft as fallback */
     if(FORMSPREE_ID === "FORM_ID"){
       var body = encodeURIComponent('From: '+(fd.get('name')||'')+' ('+(fd.get('email')||'')+')\n\n'+(fd.get('message')||''));
-      window.location.href = 'mailto:hello@yonkai.com?subject='+encodeURIComponent('Project inquiry from '+(fd.get('name')||''))+'&body='+body;
+      window.location.href = 'mailto:mischa.kalin@yonkai.ch?subject='+encodeURIComponent('Project inquiry from '+(fd.get('name')||''))+'&body='+body;
       return;
     }
     if(btn){ btn.disabled = true; var old = btn.textContent; btn.textContent = 'Sending…'; btn._old = old; }
@@ -166,7 +168,7 @@
       if(r.ok){ f.reset(); say('Thanks — your message is on its way. I\u2019ll be in touch soon.', true); }
       else { return r.json().then(function(d){ throw new Error((d && d.errors && d.errors[0] && d.errors[0].message) || 'Something went wrong.'); }); }
     }).catch(function(err){
-      say((err && err.message) || 'Could not send right now. Please email hello@yonkai.com.', false);
+      say((err && err.message) || 'Could not send right now. Please email mischa.kalin@yonkai.ch.', false);
     }).finally(function(){
       if(btn){ btn.disabled = false; btn.textContent = btn._old || 'Send message'; }
     });
@@ -190,13 +192,14 @@
     var ticking=false;
     function update(){
       ticking=false;
-      var line=window.innerHeight/2; /* middle of the screen */
-      var cur=null;
+      var cur=null, line=140; /* just below the fixed nav */
       for(var i=0;i<ids.length;i++){ var s=document.getElementById(ids[i]); if(s && s.offsetParent!==null && s.getBoundingClientRect().top<=line) cur=ids[i]; }
       if(cur!==curnav){ curnav=cur; paintNav(); }
     }
     function onscr(){ if(!ticking){ ticking=true; requestAnimationFrame(update); } }
     window.addEventListener('scroll', onscr, {passive:true});
+    window.addEventListener('scroll', onscr, true); /* capture: catch scroll from any nested scroller (e.g. preview viewer) */
+    document.addEventListener('scroll', onscr, {passive:true});
     window.addEventListener('resize', onscr, {passive:true});
     update();
   }
@@ -673,34 +676,42 @@
 
 <!-- ============================ CONTACT ============================ -->
 <section id="contact" data-screen-label="Contact" style="scroll-margin-top:80px; background:var(--bg-alt); border-top:1px solid var(--surface-2); padding:110px 0;">
-  <div style="max-width:1180px; margin:0 auto; padding:0 40px; display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:start;">
-    <div data-reveal="">
+  <div style="max-width:1180px; margin:0 auto; padding:0 40px; display:grid; grid-template-columns:1.15fr 0.85fr; gap:64px; align-items:stretch;">
+    <div data-reveal="" style="display:flex; flex-direction:column;">
       <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">// CONTACT</div>
       <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.0; letter-spacing:-0.03em; color:var(--text);">Who I am</h2>
-      <p style="margin:22px 0 0; font-size:17px; line-height:1.65; color:var(--text-muted); max-width:420px;">Opinionated, and happy to be proven wrong. I work async-first and value transparency as much as mutual trust. If any of this resonates, let's get in touch.</p>
-      <div style="display:flex; flex-wrap:wrap; gap:32px; margin-top:36px;">
+      <p style="margin:22px 0 0; font-size:17px; line-height:1.65; color:var(--text-muted); max-width:520px;">Opinionated, and happy to be proven wrong. I work async-first and value transparency as much as mutual trust. If any of this resonates, let's get in touch:</p>
+      <div style="display:flex; flex-direction:column; align-items:flex-start; gap:12px; margin-top:24px;">
+        <a href="mailto:mischa.kalin@yonkai.ch" style="display:inline-flex; align-items:center; gap:12px; text-decoration:none; padding:13px 20px; border-radius:12px; border:1px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:15px; transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;" style-hover="border-color:var(--pink); box-shadow:0 0 0 1px var(--pink), 0 12px 30px rgba(var(--pink-rgb),0.14); transform:translateY(-2px);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"></rect><path d="M3 6l9 6 9-6"></path></svg>
+          <span>mischa.kalin@yonkai.ch</span>
+        </a>
+        <a href="https://www.linkedin.com/in/mischa-kalin" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:12px; text-decoration:none; padding:13px 20px; border-radius:12px; border:1px solid var(--border); background:var(--card); color:var(--text); font-weight:600; font-size:15px; transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;" style-hover="border-color:var(--sky); box-shadow:0 0 0 1px var(--sky), 0 12px 30px rgba(var(--sky-rgb),0.14); transform:translateY(-2px);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--sky)" style="flex:none;"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.55C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.72C24 .77 23.2 0 22.22 0z"></path></svg>
+          <span>linkedin.com/in/mischa-kalin</span>
+        </a>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:32px; margin-top:auto; padding-top:48px;">
         <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--mint);">10+</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">years in tech</div></div>
-        <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--sky);">2</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">lovely cats</div></div>
+        <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--sky);">24/7</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">Kaizen</div></div>
         <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--butter);">30M+</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">in project budgets</div></div>
         <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--pink);">100%</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">built on mutual trust</div></div>
       </div>
     </div>
-    <form data-contact-form="" data-reveal="" style="display:flex; flex-direction:column; gap:16px; margin-top:88px;">
-      <div style="display:flex; gap:16px;">
-        <input name="name" required="" placeholder="Your name" style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; transition:border-color .2s ease;" style-focus="border-color:var(--mint);">
-        <input name="email" type="email" required="" placeholder="Email" style="flex:1; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; transition:border-color .2s ease;" style-focus="border-color:var(--mint);">
+    <div data-reveal="" style="position:relative; margin-top:29px; align-self:stretch; border:1px solid var(--border); border-radius:20px; overflow:hidden; background:var(--card); aspect-ratio:1/1;">
+      <img src="mischa.png" alt="Mischa Kälin" style="display:block; width:100%; height:100%; object-fit:cover; object-position:center 42%;">
+      <div style="position:absolute; left:0; right:0; bottom:0; padding:48px 24px 20px; background:linear-gradient(to top, rgba(0,0,0,0.6), transparent); pointer-events:none;">
+        <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:24px; letter-spacing:-0.02em; color:#fff;">Mischa Kälin</div>
+        <div style="font-size:13px; color:rgba(255,255,255,0.8); margin-top:2px;">Independent IT Consultant</div>
       </div>
-      <textarea name="message" required="" rows="5" placeholder="What are you trying to solve?" style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; color:var(--text); font-size:15px; outline:none; resize:vertical; transition:border-color .2s ease;" style-focus="border-color:var(--mint);"></textarea>
-      <button type="submit" style="align-self:flex-start; background:transparent; color:var(--text); font-weight:600; font-size:16px; padding:15px 32px; border-radius:8px; border:1px solid var(--border-btn); cursor:pointer; transition:all .2s ease;" style-hover="background:var(--mint); border-color:var(--mint); color:var(--mint-ink);">Send message</button>
-      <p data-form-status="" aria-live="polite" style="margin:2px 0 0; font-size:14px; line-height:1.5; min-height:1.2em;"></p>
-    </form>
+    </div>
   </div>
 </section>
 
 <!-- ============================ FOOTER ============================ -->
 <footer style="max-width:1180px; margin:0 auto; padding:30px 40px; display:flex; align-items:center; justify-content:space-between; font-size:13px; color:var(--text-muted);">
   <div style="display:flex; align-items:center; gap:10px;"><div style="width:18px; height:18px; border-radius:5px; background:linear-gradient(135deg,var(--mint),var(--sky));"></div><span>© 2026 Yonkai</span></div>
-  <span>async · transparent · trusted</span>
+  <span>All rights reserved.</span>
 </footer>
 
 <template id="__bundler_thumbnail">
