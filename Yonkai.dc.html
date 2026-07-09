@@ -61,10 +61,47 @@
   /* ===== service card titles: reserve two lines so all cards align ===== */
   #services [data-reveal] > h3 { line-height:1.15; min-height:2.3em; display:flex; align-items:flex-end; justify-content:center; }
 
+  /* wrapper stays invisible to layout except in the medium contact breakpoint below */
+  #contact-textblock { display:contents; }
+
   /* ===== TABLET ===== */
   @media (max-width: 900px){
     #services, #philosophy { padding-left:28px !important; padding-right:28px !important; }
-    #contact > div { gap:44px; }
+  }
+
+  /* ===== CONTACT: desktop only — bottom-align the (still-square, uncropped) photo with the KPI row ===== */
+  @media (min-width: 1001px){
+    #contact > div { align-items:stretch !important; }
+    #contact-photo { align-self:end !important; }
+  }
+
+  /* ===== CONTACT: "small but not mobile" — eyebrow full width, title+text+links beside photo, KPIs their own full-width row ===== */
+  @media (min-width: 761px) and (max-width: 1000px){
+    #contact > div { display:grid !important; grid-template-columns:1fr 1fr !important; row-gap:0 !important; column-gap:48px !important; align-items:start !important; }
+    #contact-col { display:contents !important; }
+    #contact-eyebrow { grid-column:1 / -1; grid-row:1; margin-bottom:6px !important; }
+    #contact-textblock { display:flex !important; flex-direction:column !important; grid-column:1; grid-row:2; }
+    #contact-lead { margin-top:14px !important; max-width:none !important; }
+    #contact-links { margin-top:10px !important; }
+    #contact-photo { grid-column:2; grid-row:2; margin-top:0 !important; }
+    #contact-kpi { grid-column:1 / -1; grid-row:3; margin-top:28px !important; margin-left:0 !important; margin-right:auto !important; max-width:700px !important; padding-top:0 !important; display:grid !important; grid-template-columns:repeat(4,max-content) !important; gap:24px 40px !important; }
+  }
+
+  /* ===== CONTACT: use the exact mobile stacked layout only when there's truly not enough room ===== */
+  @media (max-width: 760px){
+    #contact { padding:76px 0 !important; }
+    #contact > div { display:flex !important; flex-direction:column !important; gap:0 !important; padding-left:22px !important; padding-right:22px !important; }
+    #contact-col { display:contents !important; }
+    #contact-eyebrow { order:1; }
+    #contact h2 { order:2; }
+    #contact-photo { order:3; margin-top:22px !important; width:100%; max-width:420px; align-self:center !important; aspect-ratio:1/1 !important; }
+    #contact-lead { order:4; margin-top:28px !important; max-width:none !important; }
+    #contact-links { order:5; margin-top:20px !important; align-self:stretch; }
+    #contact-links a { width:100%; max-width:100%; box-sizing:border-box; }
+    #contact-links a span { min-width:0; overflow-wrap:anywhere; }
+    #contact-kpi { order:6; margin-top:32px !important; padding-top:0 !important; display:grid !important; gap:24px 28px !important; }
+    #contact form > div { flex-direction:column !important; }
+    #contact form[data-contact-form] { margin-top:0 !important; }
   }
 
   /* ===== MOBILE ===== */
@@ -104,29 +141,22 @@
     #references { padding:64px 0 !important; }
     #references [data-carousel] { padding-left:22px !important; padding-right:22px !important; position:relative; }
     [data-carousel-prev], [data-carousel-next] { display:flex !important; position:absolute; z-index:120; width:40px; height:40px; align-items:center; justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.35); }
-    #contact-links a { width:100%; max-width:100%; box-sizing:border-box; }
-    #contact-links a span { min-width:0; overflow-wrap:anywhere; }
     [data-carousel-prev] { left:2px; }
     [data-carousel-next] { right:2px; }
 
     #ikigai { transform:scale(0.6); transform-origin:top center; }
     #ikigai-wrap { height:330px; overflow:hidden; }
 
-    #contact { padding:76px 0 !important; }
-    #contact > div { display:flex !important; flex-direction:column !important; gap:0 !important; padding-left:22px !important; padding-right:22px !important; }
-    #contact-col { display:contents !important; }
-    #contact-eyebrow { order:1; }
-    #contact h2 { order:2; }
-    #contact-photo { order:3; margin-top:22px !important; width:100%; max-width:420px; align-self:center !important; }
-    #contact-lead { order:4; margin-top:28px !important; max-width:none !important; }
-    #contact-links { order:5; margin-top:20px !important; align-self:stretch; }
-    #contact-links a { width:100%; }
-    #contact-kpi { order:6; margin-top:32px !important; padding-top:0 !important; display:grid !important; grid-template-columns:1fr 1fr !important; gap:24px 20px !important; }
-    #contact form > div { flex-direction:column !important; }
-    #contact form[data-contact-form] { margin-top:0 !important; }
-
     footer { padding:24px 22px !important; flex-direction:column; gap:10px; text-align:center; }
     #cio-band { padding-left:18px !important; padding-right:18px !important; }
+  }
+
+  /* ===== CONTACT KPI on mobile: exactly 4-across when it fits, otherwise a clean even 2x2 — never 3-and-1 ===== */
+  @media (max-width: 760px) and (min-width: 667px){
+    #contact-kpi { grid-template-columns:repeat(4,max-content) !important; }
+  }
+  @media (max-width: 666px){
+    #contact-kpi { grid-template-columns:repeat(2,max-content) !important; }
   }
 </style>
 <script>
@@ -348,8 +378,8 @@
         if(!mprev && !mnext) return;
         var cy = track.offsetTop + track.clientHeight/2;
         var midx = track.offsetLeft + track.clientWidth/2, cwm = cwid();
-        if(mprev){ mprev.style.top = cy+'px'; mprev.style.transform='translateY(-50%)'; mprev.style.left = Math.max(2,(midx - cwm/2 - 4))+'px'; mprev.style.right='auto'; }
-        if(mnext){ mnext.style.top = cy+'px'; mnext.style.transform='translateY(-50%)'; mnext.style.left = (midx + cwm/2 - 40 + 4)+'px'; mnext.style.right='auto'; }
+        if(mprev){ mprev.style.top = cy+'px'; mprev.style.transform='translateY(-50%)'; mprev.style.left = Math.max(2,(midx - cwm/2 - 8 - 40))+'px'; mprev.style.right='auto'; }
+        if(mnext){ mnext.style.top = cy+'px'; mnext.style.transform='translateY(-50%)'; mnext.style.left = Math.min(window.innerWidth-42,(midx + cwm/2 + 8))+'px'; mnext.style.right='auto'; }
       }
       if(mprev) mprev.addEventListener('click', function(){ go(-1); });
       if(mnext) mnext.addEventListener('click', function(){ go(1); });
@@ -443,8 +473,8 @@
     function centerArrows(){
       var cy = track.offsetTop + track.clientHeight/2;
       var midx = track.offsetLeft + track.clientWidth/2;
-      if(prev){ prev.style.top = cy+'px'; prev.style.transform='translateY(-50%)'; prev.style.left = (midx - cw/2 - 34)+'px'; prev.style.right='auto'; prev.style.zIndex='120'; }
-      if(next){ next.style.top = cy+'px'; next.style.transform='translateY(-50%)'; next.style.left = (midx + cw/2 - 46 + 34)+'px'; next.style.right='auto'; next.style.zIndex='120'; }
+      if(prev){ prev.style.top = cy+'px'; prev.style.transform='translateY(-50%)'; prev.style.left = (midx - cw/2 - 28 - 46)+'px'; prev.style.right='auto'; prev.style.zIndex='120'; }
+      if(next){ next.style.top = cy+'px'; next.style.transform='translateY(-50%)'; next.style.left = (midx + cw/2 + 28)+'px'; next.style.right='auto'; next.style.zIndex='120'; }
     }
     centerArrows();
     setTimeout(centerArrows, 400);
@@ -677,9 +707,13 @@
           <span style="font-size:11px; color:var(--pink); border:1px solid rgba(var(--pink-rgb),0.4); border-radius:999px; padding:3px 10px; letter-spacing:0.04em;">GRC</span>
         </div>
       </div>
-      <div data-card="" data-accent="--text" style="scroll-snap-align:center; flex:0 0 320px; background:var(--card-dashed); border:1px dashed var(--border-dashed); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
-        <span style="font-size:14px; color:var(--text-muted); line-height:1.6;">Your project<br>could be next.</span>
-        <a href="#contact" style="margin-top:14px; text-decoration:none; font-size:13px; color:var(--text); border:1px solid var(--border-strong); padding:9px 18px; border-radius:8px; transition:all .2s ease;" style-hover="background:var(--mint); border-color:var(--mint); color:var(--mint-ink);">Get in touch</a>
+      <div data-card="" data-accent="--sky" style="scroll-snap-align:center; flex:0 0 320px; background:var(--card-dashed); border:1px dashed var(--border-dashed); border-radius:16px; padding:26px; min-height:200px; display:flex; flex-direction:column; transition:border-color .2s ease;" style-hover="border-color:var(--sky);">
+        <span style="font-size:13px; color:var(--sky); font-weight:600;">Open slot</span>
+        <h3 style="margin:10px 0 8px; font-size:20px; font-weight:700; color:var(--text);">This could be your project</h3>
+        <p style="margin:0; font-size:14px; line-height:1.6; color:var(--text-muted);">Every case study on this page started as a short conversation. Send me yours, and let's find out what we can build.</p>
+        <div style="margin-top:auto; padding-top:16px;">
+          <a href="#contact" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-size:13px; font-weight:600; color:var(--text); border:1px solid var(--border-strong); padding:9px 18px; border-radius:8px; transition:color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;" style-hover="border-color:var(--sky); color:var(--sky); box-shadow:0 0 0 1px var(--sky), 0 12px 30px rgba(var(--sky-rgb),0.14); transform:translateY(-2px);">Let's talk →</a>
+        </div>
       </div>
     </div>
   </div>
@@ -720,9 +754,10 @@
 
 <!-- ============================ CONTACT ============================ -->
 <section id="contact" data-screen-label="Contact" style="scroll-margin-top:80px; background:var(--bg-alt); border-top:1px solid var(--surface-2); padding:110px 0;">
-  <div style="max-width:1180px; margin:0 auto; padding:0 40px; display:grid; grid-template-columns:1.15fr 0.85fr; gap:64px; align-items:stretch;">
+  <div style="max-width:1180px; margin:0 auto; padding:0 40px; display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:start;">
     <div id="contact-col" data-reveal="" style="display:flex; flex-direction:column;">
       <div id="contact-eyebrow" style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">// CONTACT</div>
+      <div id="contact-textblock">
       <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.0; letter-spacing:-0.03em; color:var(--text);">Who I am</h2>
       <p id="contact-lead" style="margin:22px 0 0; font-size:17px; line-height:1.65; color:var(--text-muted); max-width:520px;">Opinionated, and happy to be proven wrong. I work async-first and value transparency as much as mutual trust. If any of this resonates, let's get in touch:</p>
       <div id="contact-links" style="display:flex; flex-direction:column; align-items:flex-start; gap:12px; margin-top:24px;">
@@ -735,14 +770,15 @@
           <span>linkedin.com/in/mischa-kalin</span>
         </a>
       </div>
-      <div id="contact-kpi" style="display:flex; flex-wrap:wrap; gap:32px; margin-top:auto; padding-top:48px;">
+      </div>
+      <div id="contact-kpi" style="display:grid; grid-template-columns:repeat(4,max-content); gap:24px 28px; margin-top:auto; padding-top:48px;">
         <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--mint);">10+</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">years in tech</div></div>
         <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--sky);">24/7</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">Kaizen</div></div>
         <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--butter);">30M+</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">in project budgets</div></div>
         <div><div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:44px; line-height:1; color:var(--pink);">100%</div><div style="font-size:13px; color:var(--text-muted); margin-top:6px;">built on mutual trust</div></div>
       </div>
     </div>
-    <div id="contact-photo" data-reveal="" style="position:relative; margin-top:29px; align-self:stretch; border:1px solid var(--border); border-radius:20px; overflow:hidden; background:var(--card); aspect-ratio:1/1;">
+    <div id="contact-photo" data-reveal="" style="position:relative; margin-top:29px; border:1px solid var(--border); border-radius:20px; overflow:hidden; background:var(--card); aspect-ratio:1/1;">
       <img src="mischa.png" alt="Mischa Kälin" style="display:block; width:100%; height:100%; object-fit:cover; object-position:center 42%;">
       <div style="position:absolute; left:0; right:0; bottom:0; padding:48px 24px 20px; background:linear-gradient(to top, rgba(0,0,0,0.6), transparent); pointer-events:none;">
         <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:24px; letter-spacing:-0.02em; color:#fff;">Mischa Kälin</div>
