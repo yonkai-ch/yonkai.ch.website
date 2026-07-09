@@ -267,22 +267,7 @@
     },3600);
   }
 
-  /* ---- keyword random color glow ---- */
-  function initkw(){
-    var kws=[].slice.call(document.querySelectorAll('[data-kw]'));
-    if(!kws.length) return;
-    var last=-1;
-    function glow(){
-      var i;
-      do { i=Math.floor(Math.random()*kws.length); } while(kws.length>1 && i===last);
-      last=i;
-      var pick=kws[i];
-      pick.style.color=cssvar(pick.getAttribute('data-kw'));
-      setTimeout(function(){ pick.style.color=''; }, 900+Math.random()*800);
-      setTimeout(glow, 650+Math.random()*2200);
-    }
-    setTimeout(glow, 1000);
-  }
+  /* ---- (keyword glow removed; superscript numbering used instead) ---- */
 
   /* ---- services: flip cards — hover (mouse) peeks, click/tap pins, keyboard toggles ---- */
   function initflip(){
@@ -489,7 +474,7 @@
   }
 
   var booted=false;
-  function boot(){ if(booted) return; booted=true; initReveal(); initSpy(); initRotator(); initkw(); initflip(); initCoverflow(); initnav(); }
+  function boot(){ if(booted) return; booted=true; initReveal(); initSpy(); initRotator(); initflip(); initCoverflow(); initnav(); }
   if(document.readyState!=='loading'){ setTimeout(boot,300); }
   window.addEventListener('load', boot);
 })();
@@ -536,7 +521,7 @@
         </ul>
         <h1 style="margin:14px 0 0; font-family:'Archivo',sans-serif; font-weight:900; font-size:88px; line-height:0.9; letter-spacing:-0.04em; color:var(--mint);">Why stop there?</h1>
         <div style="flex:50 0 0;" class="hero-sp-mid"></div>
-        <p style="margin:0; font-size:20px; line-height:1.6; color:var(--text-body); max-width:480px;">It’s never too early to start thinking about <span data-kw="--pink" style="transition:color .8s ease;">scalability</span> and <span data-kw="--sky" style="transition:color .8s ease;">efficiency</span> of your <span data-kw="--butter" style="transition:color .8s ease;">processes</span> – the smaller you are, the more precious your time is.</p>
+        <p style="margin:0; font-size:20px; line-height:1.6; color:var(--text-body); max-width:480px;">As an independent IT consultant, I discover<sup style="font-size:0.65em; font-weight:700; font-family:'Hanken Grotesque',sans-serif; color:var(--text-muted);">1</sup>, define<sup style="font-size:0.65em; font-weight:700; font-family:'Hanken Grotesque',sans-serif; color:var(--text-muted);">2</sup>, develop<sup style="font-size:0.65em; font-weight:700; font-family:'Hanken Grotesque',sans-serif; color:var(--text-muted);">3</sup>, and never stop short of delivering<sup style="font-size:0.65em; font-weight:700; font-family:'Hanken Grotesque',sans-serif; color:var(--text-muted);">4</sup> a bespoke solution to your problem.</p>
         <div style="display:flex; gap:22px; align-items:center; margin-top:40px;">
           <a href="#contact" style="text-decoration:none; color:var(--text); font-weight:600; padding:15px 30px; border-radius:8px; border:1px solid var(--border-btn); font-size:16px; transition:color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;" style-hover="border-color:var(--pink); color:var(--pink); box-shadow:0 0 0 1px var(--pink), 0 12px 30px rgba(var(--pink-rgb),0.14); transform:translateY(-2px);">Let's talk</a>
         </div>
