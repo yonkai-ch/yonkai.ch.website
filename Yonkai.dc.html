@@ -139,10 +139,11 @@
     #services [data-reveal] > h3 { min-height:0; }
 
     #references { padding:64px 0 !important; }
-    #references [data-carousel] { padding-left:22px !important; padding-right:22px !important; position:relative; }
+    #references [data-carousel] { padding-left:0 !important; padding-right:0 !important; position:relative; }
+    #references [data-reveal]:not([data-carousel-track]) { padding-left:22px; padding-right:22px; }
     [data-carousel-prev], [data-carousel-next] { display:flex !important; position:absolute; z-index:120; width:40px; height:40px; align-items:center; justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.35); }
-    [data-carousel-prev] { left:2px; }
-    [data-carousel-next] { right:2px; }
+    [data-carousel-prev] { left:6px !important; }
+    [data-carousel-next] { right:6px !important; }
 
     #ikigai { transform:scale(0.6); transform-origin:top center; }
     #ikigai-wrap { height:330px; overflow:hidden; }
@@ -365,7 +366,7 @@
       track.style.touchAction='pan-y'; track.style.paddingBottom='0';
       var gap = 16;
       var pos = 2*n;
-      function cwid(){ return Math.round(track.clientWidth*0.82); }
+      function cwid(){ return Math.round(track.clientWidth*0.7); }
       function place(anim){
         var w = track.clientWidth, cwm = cwid();
         row.style.transition = anim===false ? 'none' : 'transform .42s cubic-bezier(.2,.7,.2,1)';
@@ -394,9 +395,8 @@
       function centerArrows(){
         if(!mprev && !mnext) return;
         var cy = track.offsetTop + track.clientHeight/2;
-        var midx = track.offsetLeft + track.clientWidth/2, cwm = cwid();
-        if(mprev){ mprev.style.top = cy+'px'; mprev.style.transform='translateY(-50%)'; mprev.style.left = Math.max(2,(midx - cwm/2 - 8 - 40))+'px'; mprev.style.right='auto'; }
-        if(mnext){ mnext.style.top = cy+'px'; mnext.style.transform='translateY(-50%)'; mnext.style.left = Math.min(window.innerWidth-42,(midx + cwm/2 + 8))+'px'; mnext.style.right='auto'; }
+        if(mprev){ mprev.style.top = cy+'px'; mprev.style.transform='translateY(-50%)'; }
+        if(mnext){ mnext.style.top = cy+'px'; mnext.style.transform='translateY(-50%)'; }
       }
       if(mprev) mprev.addEventListener('click', function(){ go(-1); });
       if(mnext) mnext.addEventListener('click', function(){ go(1); });
@@ -584,7 +584,7 @@
 </header>
 
 <!-- ============================ SERVICES ============================ -->
-<section id="services" data-screen-label="Services" style="scroll-margin-top:80px; max-width:1180px; margin:0 auto; padding:72px 40px 90px;">
+<section id="services" data-screen-label="Services" style="scroll-margin-top:0px; max-width:1180px; margin:0 auto; padding:100px 40px 90px;">
   <div data-reveal="" style="text-align:center; max-width:900px; margin:0 auto 48px;">
     <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">/* SERVICES */</div>
     <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.02; letter-spacing:-0.03em; color:var(--text); white-space:nowrap;">How I can help</h2>
@@ -682,7 +682,7 @@
 </section>
 
 <!-- ============================ REFERENCES (carousel) ============================ -->
-<section id="references" data-screen-label="References" style="scroll-margin-top:80px; background:var(--bg-alt); border-top:1px solid var(--surface-2); border-bottom:1px solid var(--surface-2); padding:100px 0;">
+<section id="references" data-screen-label="References" style="scroll-margin-top:0px; background:var(--bg-alt); border-top:1px solid var(--surface-2); border-bottom:1px solid var(--surface-2); padding:100px 0;">
   <div data-carousel="" style="max-width:1180px; margin:0 auto; padding:0 40px; position:relative;">
     <div data-reveal="" style="margin-bottom:40px;">
       <div style="max-width:620px;">
@@ -747,7 +747,7 @@
 </section>
 
 <!-- ============================ PHILOSOPHY (ikigai venn) — HIDDEN for now, re-introduce later ============================ -->
-<section id="philosophy" data-screen-label="Philosophy" style="display:none; scroll-margin-top:80px; max-width:1180px; margin:0 auto; padding:120px 40px;">
+<section id="philosophy" data-screen-label="Philosophy" style="display:none; scroll-margin-top:0px; max-width:1180px; margin:0 auto; padding:100px 40px;">
   <div data-reveal="" style="text-align:center; max-width:620px; margin:0 auto 56px;">
     <div style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">/* PHILOSOPHY */</div>
     <h2 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:46px; line-height:1.02; letter-spacing:-0.03em; color:var(--text);">Why I do this</h2>
@@ -780,7 +780,7 @@
 </section>
 
 <!-- ============================ CONTACT ============================ -->
-<section id="contact" data-screen-label="Contact" style="scroll-margin-top:80px; background:var(--bg-alt); border-top:1px solid var(--surface-2); padding:110px 0;">
+<section id="contact" data-screen-label="Contact" style="scroll-margin-top:0px; background:var(--bg-alt); border-top:1px solid var(--surface-2); padding:100px 0 110px;">
   <div style="max-width:1180px; margin:0 auto; padding:0 40px; display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:start;">
     <div id="contact-col" data-reveal="" style="display:flex; flex-direction:column;">
       <div id="contact-eyebrow" style="font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;">// CONTACT</div>
